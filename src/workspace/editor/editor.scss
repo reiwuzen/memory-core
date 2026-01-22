@@ -1,0 +1,80 @@
+.editor-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 80vw;
+}
+
+.editor-toolbar {
+  max-width: calc(100% - 16px);
+//   height: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: #111;
+  border-bottom: 1px solid #333;
+
+  button {
+    background: #1e1e1e;
+    color: #bbb;
+    border: 1px solid #333;
+    padding: 6px 8px;
+    cursor: pointer;
+
+    &.active {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #6366f1;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.editor-content {
+  flex: 1;
+  padding: 16px;
+  background: #fff;
+  color: #000;
+  overflow-y: auto;
+
+  .ProseMirror {
+    outline: none;
+    min-height: 100%;
+  }
+}
+
+@media (max-width: 800px) and (max-height: 600px) {
+  .editor-toolbar {
+  max-width: 100%;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: #111;
+  border-bottom: 1px solid #333;
+
+  button {
+    background: #1e1e1e;
+    color: #bbb;
+    border: 1px solid #333;
+    padding: 6px 10px;
+    cursor: pointer;
+
+    &.active {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #6366f1;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
+
+}

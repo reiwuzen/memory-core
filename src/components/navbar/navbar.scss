@@ -1,0 +1,27 @@
+nav#navbar {
+  min-width: 20%;
+  max-height: 100vh;
+  height: calc(100vh - 20px);
+//   min-height: 100vh;
+  background-color: aqua;
+  color: rgb(0, 0, 0);
+  padding: 10px 0px;
+  ul {
+    display: flex;
+    flex-direction: column;
+    li {
+      list-style: none;
+      padding: 8px 10px;
+      // font-size: 2rem;
+      text-align: center;
+      justify-content: center;
+      align-self: center;
+      &:hover {
+        cursor: pointer;
+        width: 80%;
+        background-color: rgba(255, 255, 255, 0.874);
+        border-radius: 10px;
+      }
+    }
+  }
+}
