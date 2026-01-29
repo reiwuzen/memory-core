@@ -1,0 +1,73 @@
+
+.memory-space-list {
+
+  width: calc(100% - 4rem);
+  height: calc(100% - 3rem);
+  padding: 1.5rem 2rem;
+  background: #0f1115;
+  color: #e6e6e6;
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.4px;
+  }
+
+  &.error {
+    color: #ff6b6b;
+  }
+}
+
+.memory-space-list-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.memory-space-list-item {
+  background: #161a22;
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+
+  &:hover {
+    background: #1b2030;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+    color: #ffffff;
+    line-height: 1.3;
+  }
+
+  .memory-space-list-preview {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #b5b9c9;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Loading / Empty States */
+.memory-space-list {
+  .loading,
+  .empty {
+    opacity: 0.7;
+    font-style: italic;
+  }
+}

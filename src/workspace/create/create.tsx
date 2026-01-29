@@ -1,42 +1,28 @@
 import "./create.scss";
 import { useState } from "react";
-import Editor from "@/components/editor/editor";
-import type { MemoryType } from "@/memory/schema";
+import TemplatePicker from "./templatePicker/templatePicker";
+import TemplateForm from "./templateForm/templateForm";
+import type { MemoryTemplate } from "@/memory/template";
 
 const Create = () => {
-  const [title, setTitle] = useState("");
-  const [memoryType, setMemoryType] = useState<MemoryType>("diary");
+  const [createSteps, setCreateSteps] = useState<1 | 2>(1);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<MemoryTemplate | null>(null);
 
   return (
     <div className="create">
-      <div className="create-field">
-        <label htmlFor="title">Title</label>
-        <input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+      {createSteps === 1 && (
+        <TemplatePicker
+          onSelectTemplate={(template) => {
+            setSelectedTemplate(template);
+            setCreateSteps(2);
+          }}
         />
-      </div>
+      )}
 
-      <div className="create-field">
-        <label htmlFor="type">Memory type</label>
-        <select
-          id="type"
-          value={memoryType}
-          onChange={(e) => setMemoryType(e.target.value as MemoryType)}
-        >
-          <option value="diary">Diary</option>
-          <option value="fact">Fact</option>
-          <option value="event">Event</option>
-          <option value="schedule">Schedule</option>
-        </select>
-      </div>
-
-      <div className="create-editor">
-        <label>Content</label>
-        <Editor />
-      </div>
-      <button id="create-save">Save</button>
+      {createSteps === 2 && selectedTemplate && (
+        <TemplateForm selectedTemplate={selectedTemplate} />
+      )}
     </div>
   );
 };
