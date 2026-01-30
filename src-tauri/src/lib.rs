@@ -2,6 +2,7 @@
 pub mod schema;
 pub mod storage;
 pub mod utils;
+pub mod tag;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,7 +14,10 @@ pub fn run() {
             storage::save_memory_node,
             storage::load_all_memory_items,
             storage::load_active_memory_node_of_memory_item,
-            storage::load_all_memory_nodes_of_memory_item
+            storage::load_all_memory_nodes_of_memory_item,
+            tag::create_tags_dir,
+            tag::save_tag,
+            tag::load_all_tags,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

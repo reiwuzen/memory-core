@@ -26,3 +26,12 @@ pub struct MemoryNode {
     pub memory_type: MemoryType,
     pub change_reason: Option<String>,
 }
+
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Tag {
+    pub id: String,
+    pub label: String,
+    pub description:String,
+    pub priority: f32,
+}
