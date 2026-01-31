@@ -18,6 +18,7 @@ pub fn run() {
             tag::create_tags_dir,
             tag::save_tag,
             tag::load_all_tags,
+            tag::delete_tag
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

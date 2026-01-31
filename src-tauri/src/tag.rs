@@ -44,3 +44,12 @@ pub fn load_all_tags(app:AppHandle) -> Result<Vec<Tag>,String>{
     }
     Ok(tags)
 }
+
+/// fn to delete a tag by its id
+#[command]
+pub fn delete_tag(app:AppHandle, tag_id:String)-> Result<(),String>{
+    let tags_dir = create_tags_dir(app)?;
+    let tag_dir = tags_dir.join(tag_id);
+    std::fs::remove_dir_all(&tag_dir).map_err(|e| format!("Failed to delete the {} <dir> : {}",tag_dir.display(), e))?;
+    Ok(())
+}

@@ -32,9 +32,13 @@ export const useTags = () => {
     await loadTags();
   };
 
+  const deleteTag = async (tagId: string) => {
+    await invoke("delete_tag", { tagId });
+  }
+
   useEffect(() => {
     loadTags();
   }, [loadTags]);
 
-  return { tags, loading, error, saveTag, updateTag, reload: loadTags };
+  return { tags, loading, error, saveTag, updateTag, reload: loadTags, removeTag: deleteTag };
 };

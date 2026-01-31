@@ -13,7 +13,7 @@ const Structure = () => {
   const [tag, setTag] = useState<Tag | null>(null);
   const [view, setView] = useState<"list" | "details" | "create">("list");
 
-  const { saveTag, reload } = useTags();
+  const { saveTag, reload, removeTag } = useTags();
   return (
     <div className="structure">
       {view === "list" && (
@@ -24,7 +24,12 @@ const Structure = () => {
           }}
         />
       )}
-      {view === "details" && tag && <StructureDetails tag={tag} />}
+      {view === "details" && tag && <StructureDetails tag={tag} onDelete={async(tagToDelete)=>{
+        await removeTag(tagToDelete.id);
+        setTag(null);
+        await reload();
+        setView("list");
+      }} />}
 
       {view === "create" && (
         <StructureCreate
