@@ -14,13 +14,15 @@ const Editor = () => {
     changeBlockType,
     deleteBlock,
     updateBlockContent,
+    onClickBlockMenuItem
   } = useEditorZen();
   const blockRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const blockMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    
     if (!pendingFocusId.current) return;
-
+    console.log("getting el")
     const el = blockRefs.current.get(pendingFocusId.current);
     if (el) {
       focusEnd(el);
@@ -40,7 +42,7 @@ const Editor = () => {
 
     document.addEventListener("mousedown", handleDropDownClose);
     return () => document.removeEventListener("mousedown", handleDropDownClose);
-  }, []);
+  }, [blocks]);
 
   /* ---------- DOM refs (local, NOT in store) ---------- */
 
@@ -119,50 +121,13 @@ const Editor = () => {
                 openMenuProp={openMenu}
                 blockMenuRef={blockMenuRef as React.RefObject<HTMLDivElement>}
                 onClose={() => setOpenMenu(null)}
-                onClick_text={() => {
-                  pendingFocusId.current = insertBlockAfter(block.id, "text");
-
-                  setOpenMenu(null);
+                onClick_BlockMenuItem={(changeToType)=>{
+                  
+                  pendingFocusId.current = onClickBlockMenuItem(block,changeToType )
+                  console.log(`pending focus id: ${pendingFocusId.current} `)
                 }}
-                onClick_heading1={() => {
-                  block.content === ""
-                    ? (pendingFocusId.current = changeBlockType(
-                        block.id,
-                        "heading1",
-                      ))
-                    : (pendingFocusId.current = insertBlockAfter(
-                        block.id,
-                        "heading1",
-                      ));
-
-                  setOpenMenu(null);
-                }}
-                onClick_heading2={() => {
-                  block.content === ""
-                    ? (pendingFocusId.current = changeBlockType(
-                        block.id,
-                        "heading2",
-                      ))
-                    : (pendingFocusId.current = insertBlockAfter(
-                        block.id,
-                        "heading2",
-                      ));
-
-                  setOpenMenu(null);
-                }}
-                onClick_bulletlist={() => {
-                  block.content === ""
-                    ? (pendingFocusId.current = changeBlockType(
-                        block.id,
-                        "bullet-list",
-                      ))
-                    : (pendingFocusId.current = insertBlockAfter(
-                        block.id,
-                        "bullet-list",
-                      ));
-
-                  setOpenMenu(null);
-                }}
+                
+                
               />
             )}
           </div>

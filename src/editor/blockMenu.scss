@@ -2,7 +2,7 @@
   width: 280px;
   max-height: 420px;
   padding: 8px;
-position: absolute;
+  position: absolute;
   background: #2f2f2f;
   color: #e6e6e6;
 
@@ -10,13 +10,26 @@ position: absolute;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 100;
 
-    top: 0;
+  top: 0;
   left: 32px; // aligns right of + button
   font-size: 14px;
-  
+
   .menu {
     overflow-y: auto;
+    height: 350px;
     /* ---------- SECTION ---------- */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+    }
 
     .menu-section {
       padding: 6px 10px;
@@ -119,28 +132,27 @@ position: absolute;
   }
 }
 
-
 .blockMenu.more {
   padding: 12px;
   /* ---------- HEADER ---------- */
   .more-header {
     padding: 8px 10px 12px;
     border-bottom: 1px solid #3a3a3a;
-  
+
     .more-title {
       font-size: 12px;
       color: #9b9b9b;
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
-  
+
     .more-subtitle {
       font-size: 14px;
       font-weight: 500;
       margin-top: 2px;
     }
   }
-  
+
   /* ---------- TABS ---------- */
   .more-tabs {
     display: flex;
@@ -148,7 +160,7 @@ position: absolute;
     flex-direction: column;
     gap: 6px;
     padding: 10px;
-  
+
     button {
       // flex: 1;
       height: 50px;
@@ -158,13 +170,13 @@ position: absolute;
       border: 1px solid #3a3a3a;
       cursor: pointer;
       font-size: 13px;
-  
+
       transition: all 0.15s ease;
-  
+
       &:hover {
         background: #3a3a3a;
       }
-  
+
       &.active {
         background: #4a4a4a;
         color: #ffffff;
@@ -172,7 +184,7 @@ position: absolute;
       }
     }
   }
-  
+
   /* ---------- PANEL ---------- */
   .more-panel {
     margin-top: 8px;
@@ -181,4 +193,3 @@ position: absolute;
     overflow-y: auto;
   }
 }
-

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { BlockType } from "./blockTypeMenu";
+import { BlockType } from "@/types/editor";
 
 export type Block = {
   id: string;
@@ -19,6 +19,7 @@ type EditorState = {
 
   /* ---------- UI ---------- */
   setOpenMenu: (menu: OpenMenu) => void;
+  onClickBlockMenuItem: (block:Block , changeToType: BlockType) => string
 
   /* ---------- BLOCK ACTIONS ---------- */
   insertBlockAfter: (afterId: string, type: BlockType) => string;
@@ -37,6 +38,21 @@ export const useEditorZen = create<EditorState>((set, get) => ({
     },
   ],
   openMenu: null,
+  onClickBlockMenuItem: (block, changeToType) => {
+    let returnId: string;
+    block.content === ""
+                    ?  returnId = get().changeBlockType(
+                        block.id,
+                        changeToType,
+                      )
+                    : returnId = get().insertBlockAfter(
+                        block.id,
+                        changeToType,
+                      );
+
+                  get().setOpenMenu(null);
+                  return returnId;
+  },
 
   /* ---------- UI ---------- */
   setOpenMenu: (openMenu) => set({ openMenu }),

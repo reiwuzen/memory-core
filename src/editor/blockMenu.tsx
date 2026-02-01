@@ -3,16 +3,14 @@ import "./blockMenu.scss";
 import BlockTypeMenu from "./blockTypeMenu";
 import TextColorMenu from "./textColorMenu";
 import { Block } from "./useEditorZen";
+import { BLOCK_ITEMS, BlockType } from "@/types/editor";
 
 type BlockMenuProps = {
   block: Block; 
   openMenuProp: {blockId: string, type : null | 'add' | 'more'} | null
   onClose: () => void;
   blockMenuRef: React.RefObject<HTMLDivElement>;
-  onClick_text: () => void;
-  onClick_heading1: () => void;
-  onClick_heading2: () => void;
-  onClick_bulletlist: () => void;
+  onClick_BlockMenuItem: (changeToType: BlockType) => void
 };
 
 const BlockMenu = ({
@@ -20,10 +18,8 @@ const BlockMenu = ({
   openMenuProp,
   onClose,
   blockMenuRef,
-  onClick_text,
-  onClick_heading1,
-  onClick_heading2,
-  onClick_bulletlist,
+ 
+  onClick_BlockMenuItem
 }: BlockMenuProps) => {
   const [blockTypeMenuToggle, setBlockTypeMenuToggle] = useState(false);
   const [textColorMenuToggle, setTextColorMenuToggle] = useState(false);
@@ -37,38 +33,20 @@ const BlockMenu = ({
       >
         <div className="menu">
           <div className="menu-section">Basic blocks</div>
+{
+  BLOCK_ITEMS.map((item)=>(
+    <div className="menu-item" onClick={()=>onClick_BlockMenuItem(item.type)}>
+      <div className={`menu-item-identifier`}>{item.icon}</div>
+      <div className="menu-item-label">{item.label}</div>
+      {item?.hint && (<div className={`menu-item-hint`}>{item.hint}</div>) }
+    </div>
+  ))
+}
+          
 
-          <div className="menu-item" onClick={() => onClick_text()}>
-            <div className="menu-item-identifier">T</div>
-            <div className="menu-item-label">Text</div>
-            <div className="menu-item-hint">Enter</div>
-          </div>
 
-          <div className="menu-item" onClick={() => onClick_heading1()}>
-            <div className="menu-item-identifier">H1</div>
-            <div className="menu-item-label">Heading 1</div>
-            <div className="menu-item-hint">#</div>
-          </div>
-
-          <div className="menu-item" onClick={() => onClick_heading2()}>
-            <div className="menu-item-identifier">H2</div>
-            <div className="menu-item-label">Heading 2</div>
-            <div className="menu-item-hint">##</div>
-          </div>
-
-          <div className="menu-item" onClick={() => onClick_bulletlist()}>
-            <div className="menu-item-identifier">•</div>
-            <div className="menu-item-label">Bulleted list</div>
-            <div className="menu-item-hint">-</div>
-          </div>
-
-          <div className="menu-item">
-            <div className="menu-item-identifier">—</div>
-            <div className="menu-item-label">Divider</div>
-          </div>
-
-          <div className="menu-section">Close menu</div>
         </div>
+        <div className="menu-section">Close menu</div>
         <div
           className="menu-item close-menu"
           onMouseDown={(e) => {
