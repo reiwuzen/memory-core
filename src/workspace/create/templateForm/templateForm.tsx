@@ -3,12 +3,15 @@ import "./templateForm.scss";
 import { MemoryTemplate } from "@/memory/template";
 import { MemoryItemService } from "@/service/memoryItemService";
 import { invoke } from "@tauri-apps/api/core";
+import { MemoryType } from "@/memory/schema";
+import { useActiveTab } from "@/hooks/useActiveTab";
 type TemplateFormProps = {
   selectedTemplate: MemoryTemplate;
 };
 
 const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
   const { createMemoryItem } = MemoryItemService();
+  const {switchActiveTab} = useActiveTab();
   const [title, setTitle] = useState(selectedTemplate.initialTitle);
   const [type, setType] = useState(selectedTemplate.memoryType);
 
@@ -39,6 +42,7 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
           <select
             id="templateFormType"
             value={type}
+            onChange={(e) => setType(e.target.value as MemoryType)}
             disabled={selectedTemplate.id !== "generic"}
           >
             <option value="Diary">Diary</option>
@@ -58,6 +62,7 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
                   title as string,
                   type,
                 );
+                switchActiveTab('memory_space')
                 
               } catch (err) {
                 console.error("Failed to save memory:", err);
