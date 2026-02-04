@@ -7,21 +7,26 @@ export const MemoryItemService = () => {
         //  loadMemoryNode 
          } = MemoryNodeService();
     const createMemoryItem = async (title: string, type:MemoryType) => {
-        const newMemoryItem: MemoryItem = {
-            memory_id: v7(),
+        const memory_id = v7();
+        const initial_node_id = v7();
+        const memoryItem:MemoryItem ={
+            memory_id,
             created_at: new Date().toISOString(),
-            active_node_id: "",
+active_node_id: initial_node_id
+        } 
+        const memoryNode: MemoryNode = {
+            node_id: initial_node_id,
+            title,
+            memory_type:type,
+            memory_id,
+            created_at: new Date().toISOString(),
+            content_json: '',
+            content_string: '',
         }
-        await invoke("save_memory_item", {
-                  memoryItem: newMemoryItem,
-                });
-        const memoryNode = await createMemoryNode(newMemoryItem.memory_id, title, type,null,'',"Initial creation", undefined);
-        const memoryItem: MemoryItem = {
-            ...newMemoryItem,
-            active_node_id: memoryNode.node_id,
-        }
-        await setActiveNodeIdOfMemoryItem(memoryNode.memory_id, memoryNode.node_id)
-
+        await invoke("create_memory_item",{
+            memoryItem:memoryItem,
+            memoryNode:memoryNode,
+        })
                 
                 
         return {memoryItem, memoryNode};
