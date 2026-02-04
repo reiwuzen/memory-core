@@ -379,7 +379,7 @@ pub fn create_memory_item(
     let node_path = staging_memory_item_path
         .join("nodes")
         .join(memory_node.node_id.clone());
-    let node_json_path = node_path.join("metajson.json");
+    let node_json_path = node_path.join("metadata.json");
     let node_json = serde_json::to_string_pretty(&memory_node)
         .map_err(|e| format!("Failed to serialize memory_node to string: {}", e))?;
     let node_content_json_path = node_path.join("content.json");
