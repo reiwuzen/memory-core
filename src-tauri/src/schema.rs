@@ -1,12 +1,12 @@
 use chrono::{DateTime, Utc};
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct MemoryItem {
     pub memory_id: String,
     pub created_at: DateTime<Utc>,
     pub active_node_id: String,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize,Clone,Debug)]
 pub enum MemoryType {
     Diary,
     Fact,
@@ -15,7 +15,7 @@ pub enum MemoryType {
     Generic
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone ,Debug)]
 pub struct MemoryNode {
     pub node_id: String,
     pub memory_id: String,
@@ -30,10 +30,17 @@ pub struct MemoryNode {
 }
 
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize,Clone, Debug)]
 pub struct Tag {
     pub id: String,
     pub label: String,
     pub description:String,
     pub priority: f32,
+}
+
+#[derive(serde::Serialize)]
+pub struct MemoryPayload {
+    pub memory_item: MemoryItem,
+    pub active_node: MemoryNode,
+    pub nodes: Vec<MemoryNode>,
 }

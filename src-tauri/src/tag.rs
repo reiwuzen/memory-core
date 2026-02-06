@@ -8,7 +8,8 @@ use crate::schema::Tag;
 pub fn create_tags_dir(app:AppHandle) -> Result<PathBuf,String>{
     let app_dir = get_app_dir(app)?;
     let tags_dir  = app_dir.join("tags");
-    if !tags_dir.exists() {
+    if !tags_dir.exists()
+    {
         std::fs::create_dir_all(&tags_dir).map_err(|e|format!("Failed to create tags directory: {}",e))?;
     }
     Ok(tags_dir)

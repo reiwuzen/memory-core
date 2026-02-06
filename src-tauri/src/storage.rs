@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
-    schema::{MemoryItem, MemoryNode, Tag},
+    schema::{MemoryItem, MemoryNode, MemoryPayload, Tag},
     utils::get_app_dir,
 };
 use tauri::{
@@ -9,7 +9,7 @@ use tauri::{
     command,
     AppHandle,
 };
-use tokio::fs;
+// use tokio::fs;
 // use tokio::fs as tokio_fs;
 
 /// fn to create memory_spaces directory
@@ -653,4 +653,112 @@ pub fn delete_tag_from_node(
         .map_err(|e| format!("Failed to replace metadata.json: {}", e))?;
 
     Ok(())
+}
+
+
+
+
+///
+#[command]
+pub fn delete_memory_item(app: AppHandle, memory_id: String) -> Result<(), String> {
+    use std::fs;
+
+    let memory_spaces_dir = create_memory_spaces_dir(app)?;
+    let memory_item_dir = memory_spaces_dir.join(&memory_id);
+    let delete_root = memory_spaces_dir.join(".delete");
+    let delete_target = delete_root.join(&memory_id);
+
+    fs::create_dir_all(&delete_root)
+        .map_err(|e| format!("Failed to create .delete directory: {}", e))?;
+
+    fs::rename(&memory_item_dir, &delete_target).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            format!("Memory item {} does not exist", memory_id)
+        } else {
+            format!(
+                "Failed to move {:?} to {:?}: {}",
+                memory_item_dir, delete_target, e
+            )
+        }
+    })?;
+
+    fs::remove_dir_all(&delete_target)
+        .map_err(|e| format!("Failed to delete memory item {}: {}", memory_id, e))?;
+
+    Ok(())
+}
+
+
+
+///
+#[command]
+pub fn get_memory_item_active_node_nodes(
+    app: AppHandle,
+    memory_id: String,
+) -> Result<MemoryPayload, String> {
+    use std::fs;
+
+    let memory_spaces_dir = create_memory_spaces_dir(app)?;
+    let memory_space_dir = memory_spaces_dir.join(&memory_id);
+
+    // 1. Read MemoryItem metadata
+    let metadata_path = memory_space_dir.join("metadata.json");
+    if !metadata_path.exists() {
+        return Err("memory item metadata.json not found".into());
+    }
+
+    let metadata_str = fs::read_to_string(&metadata_path)
+        .map_err(|e| format!("failed to read metadata.json: {e}"))?;
+
+    let memory_item: MemoryItem = serde_json::from_str(&metadata_str)
+        .map_err(|e| format!("failed to parse MemoryItem: {e}"))?;
+
+    // 2. Read all nodes
+    let nodes_dir = memory_space_dir.join("nodes");
+    if !nodes_dir.exists() {
+        return Err("nodes directory not found".into());
+    }
+
+    let mut nodes: Vec<MemoryNode> = Vec::new();
+    let mut active_node: Option<MemoryNode> = None;
+
+    for entry in fs::read_dir(&nodes_dir)
+        .map_err(|e| format!("failed to read nodes dir: {e}"))?
+    {
+        let entry = entry.map_err(|e| format!("invalid dir entry: {e}"))?;
+        let path = entry.path();
+
+        if !path.is_dir() {
+            continue;
+        }
+
+        let node_id = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or("invalid node directory name")?
+            .to_string();
+
+        let node_metadata_path = path.join("metadata.json");
+        if !node_metadata_path.exists() {
+            continue; // or Err, depending on how strict you want to be
+        }
+
+        let node_str = fs::read_to_string(&node_metadata_path)
+            .map_err(|e| format!("failed to read node metadata: {e}"))?;
+
+        let node: MemoryNode = serde_json::from_str(&node_str)
+            .map_err(|e| format!("failed to parse MemoryNode: {e}"))?;
+
+        if node_id == memory_item.active_node_id {
+            active_node = Some(node.clone());
+        }
+
+        nodes.push(node);
+    }
+
+    let active_node = active_node
+        .ok_or("active_node_id does not match any node directory")?;
+    // println!("{:#?}",active_node);
+
+    Ok(MemoryPayload { memory_item, active_node, nodes })
 }

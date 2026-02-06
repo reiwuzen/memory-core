@@ -12,6 +12,8 @@ pub fn run() {
             storage::create_memory_spaces_dir,
             storage::create_memory_item_with_initial_node,
             storage::add_new_node_to_existing_memory_item,
+            storage::delete_memory_item,
+            storage::get_memory_item_active_node_nodes,
             storage::load_all_memory_items,
             storage::load_active_memory_node_of_memory_item,
             storage::load_all_memory_nodes_of_memory_item,
