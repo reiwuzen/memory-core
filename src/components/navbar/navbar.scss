@@ -1,18 +1,23 @@
 nav#navbar {
-  width: 15%;
+   width: 240px;   // perfect desktop sidebar size
+  min-width: 240px;
+  flex-shrink: 0;
   height: calc(100% - 32px);
   padding: 16px 0;
 
   display: flex;
   justify-content: center;
+  background-color: #2A2F33;
 
-  background: linear-gradient(
-    180deg,
-    #0fb9c6 0%,
-    #0aa3af 100%
-  );
+  // background: linear-gradient(
+  //   180deg,
+  //   rgb(0, 0, 0) 0%,
+  //   rgb(0, 0, 0) 50%,
+  //   rgb(0, 0, 0) 100%
+  // );
 
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 4px 0 24px rgba(255, 255, 255, 0.1);
+
 
   ul {
     display: flex;
@@ -20,55 +25,63 @@ nav#navbar {
     gap: 12px;
     padding: 0;
     margin: 0;
+    
+    .icon {
+      display: flex;
+      text-align: left;
+      
+      justify-content: flex-start;
+    }
+
 
     li {
       list-style: none;
-      height: 80px;
-      width: 80px;
+      height: 20px;
+      width: 150px;
       padding: 12px 12px;
 
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
+      gap: 10px;
+      background-color: #2F353A;
 
       border-radius: 16px;
       cursor: pointer;
 
-      opacity: 0.55;
-      transition:
-        background 0.25s ease,
-        opacity 0.25s ease,
-        transform 0.15s ease,
-        box-shadow 0.25s ease;
+      opacity: 1;
+      // transition:
+      //   background 0.25s ease,
+      //   opacity 0.25s ease,
+      //   transform 0.15s ease,
+      //   box-shadow 0.25s ease;
 
-        div{
+      transition: all 0.2s ease;
 
-          width: 60px;
-          height: 60px;
-          svg {
-            width: 100%;
-            height: 100%; 
-            transition: transform 0.25s ease;
-          }
-        }
+      svg {
+        width: 25px;
+        height: 25px;
+        transition: transform 0.25s ease;
+        
+      }
 
       h6 {
         text-align: center;
-        margin-top: 6px;
-        font-size: 10px;
+        margin-top: 0;
+        font-size: 12px;
         font-weight: 500;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: #000000;
-          white-space: nowrap;
-        opacity: 0.85;
+        color: #C4CDD3;
+        opacity: 0.95;
         user-select: none;
+        
       }
 
       &:hover {
         opacity: 0.9;
-        background: rgba(255, 255, 255, 0.14);
+        background: #3A4146;
 
         svg {
           transform: translateY(-1px);
@@ -77,10 +90,11 @@ nav#navbar {
 
       &:active {
         transform: scale(0.96);
+        transform: translateX(5px);
       }
 
       &.active {
-        background: #ffffff;
+        background: #FFFFFF;
         opacity: 1;
 
         box-shadow:
@@ -92,7 +106,7 @@ nav#navbar {
         }
 
         h6 {
-          color: #0aa3af;
+          color: #0AA3AF;
           font-weight: 600;
           opacity: 1;
         }

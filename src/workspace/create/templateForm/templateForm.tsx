@@ -9,11 +9,21 @@ type TemplateFormProps = {
   selectedTemplate: MemoryTemplate;
 };
 
+const memoryTypes: MemoryType[] = [
+  "Diary",
+  "Fact",
+  "Event",
+  "Generic",
+];
+
 const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
   const { createMemoryItem } = MemoryItemService();
   const {setActiveTabTypeAndView} = useActiveTab();
   const [title, setTitle] = useState(selectedTemplate.initialTitle);
   const [type, setType] = useState(selectedTemplate.memoryType);
+    
+  const [open, setOpen] = useState<boolean>(false);
+
 
   return (
     <div className="templateForm">
@@ -38,18 +48,42 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
         </div>
 
         <div className="form-field">
-          <label htmlFor="templateFormType">Type</label>
-          <select
-            id="templateFormType"
-            value={type}
-            onChange={(e) => setType(e.target.value as MemoryType)}
-            disabled={selectedTemplate.id !== "generic"}
+          <label>Type</label>
+
+          <div
+            className={`custom-select ${
+              selectedTemplate.id !== "generic" ? "disabled" : ""
+            }`}
           >
-            <option value="Diary">Diary</option>
-            <option value="Fact">Fact</option>
-            <option value="Event">Event</option>
-            <option value="Generic">Generic</option>
-          </select>
+            <button
+              type="button"
+              className="custom-select-trigger"
+              disabled={selectedTemplate.id !== "generic"}
+              onClick={() => setOpen((prev) => !prev)}
+            >
+              <span>{type}</span>
+              <span className="chevron">▾</span>
+            </button>
+
+            {open && (
+              <div className="custom-select-dropdown">
+                {memoryTypes.map((t) => (
+                  <div
+                    key={t}
+                    className={`custom-select-option ${
+                      type === t ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setType(t);
+                      setOpen(false);
+                    }}
+                  >
+                    {t}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="form-actions">

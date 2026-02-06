@@ -11,7 +11,7 @@ const TemplatePicker = ({ onSelectTemplate }: TemplatePickerProps) => {
     <div className="templatePicker">
       <header className="templatePicker-header">
         <h1>Create a memory</h1>
-        <p>Choose how you want to begin</p>
+        <p>Choose how you want to begin. Select a template to initialize a new data structure in the current branch.</p>
       </header>
 
       <div className="templatePicker-wrapper">

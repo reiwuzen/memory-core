@@ -29,7 +29,7 @@ const Navbar = () => {
             {/* <!-- Bottom right card --> */}
             <rect x="34" y="32" width="16" height="18" rx="8" fill="#BFF6FA" />
           </svg>
-            </div>
+          </div>
           <h6>Overview</h6>
         </li>
         <li 
@@ -57,7 +57,7 @@ const Navbar = () => {
             {/* <!-- Connection dots --> */}
             <circle cx="32" cy="32" r="2" fill="#0FB9C6" />
           </svg>
-            </div>
+          </div>
           <h6>Memory Spaces</h6>
         </li>
         <li 
@@ -73,15 +73,15 @@ const Navbar = () => {
             xmlns="http://www.w3.org/2000/svg"
           >
             {/* <!-- Background --> */}
-            <rect x="4" y="4" width="56" height="56" rx="16" fill="#E6FDFF" />
+            <rect x="4" y="4" width="56" height="56" rx="16" fill="#ffffff" />
 
             {/* <!-- Plus vertical --> */}
             <rect x="30" y="18" width="4" height="28" rx="2" fill="#0FB9C6" />
 
             {/* <!-- Plus horizontal --> */}
-            <rect x="18" y="30" width="28" height="4" rx="2" fill="#0FB9C6" />
+            <rect x="18" y="30" width="28" height="4" rx="2" fill="#0FB9C6" />    
           </svg>
-        </div>
+          </div>
           <h6>Create</h6>
         </li>
         <li
@@ -109,7 +109,7 @@ const Navbar = () => {
             <rect x="18" y="36" width="12" height="12" rx="6" fill="#7EE6ED" />
             <rect x="34" y="36" width="12" height="12" rx="6" fill="#BFF6FA" />
           </svg>
-            </div>
+          </div>
           <h6>Structure</h6>
         </li>
         <li 

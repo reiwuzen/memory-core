@@ -8,14 +8,18 @@
 }
 
 .templateForm-header {
+  margin-bottom: 0.5rem;
+
   h1 {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     font-weight: 600;
+    color: #EAF4F6;
+    letter-spacing: -0.01em;
   }
 
   p {
-    font-size: 0.9rem;
-    color: #666;
+    font-size: 0.95rem;
+    color: #9FB2BA;
   }
 }
 
@@ -31,39 +35,107 @@
   gap: 0.4rem;
 
   label {
-    font-size: 0.85rem;
-    color: #444;
+    font-size: 0.8rem;
+    color: #EAF4F6;
+    font-weight: 500;
+  }
+  .custom-select {
+  position: relative;
+  width: 100%;
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  background: #2F353A;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #EAF4F6;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #1F2428;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 4px;
+  z-index: 50;
+}
+
+.custom-select-option {
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(10,163,175,0.15);
   }
 
-  input,
-  select {
-    padding: 0.6rem 0.7rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+  &.active {
+    background: rgba(10,163,175,0.25);
+  }
+}
+
+
+
+  input {
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: #2F353A;
+    color: #EAF4F6;
     font-size: 0.9rem;
+    transition: all 0.2s ease;
   }
-
-  select:disabled {
-    background: #f5f5f5;
-    color: #555;
+  
+  input:focus{
+    outline: none;
+    border-color: #0AA3AF;
+    box-shadow: 0 0 0 1px rgba(10,163,175,0.35);
   }
+  
 }
 
 .form-actions {
   margin-top: 1rem;
-
+  
   button.primary {
-    align-self: flex-start;
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-    border: none;
-    background: #000;
-    color: #fff;
-    cursor: pointer;
+  align-self: flex-start;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  border: none;
+  background: #0AA3AF;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 
-    &:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+  &:hover {
+    background: #08919B;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(10,163,175,0.25);
   }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
 }
