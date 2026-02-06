@@ -1,5 +1,7 @@
 nav#navbar {
-  width: 17%;
+   width: 240px;   // perfect desktop sidebar size
+  min-width: 240px;
+  flex-shrink: 0;
   height: calc(100% - 32px);
   padding: 16px 0;
 
@@ -15,6 +17,7 @@ nav#navbar {
   // );
 
   box-shadow: 4px 0 24px rgba(255, 255, 255, 0.1);
+
 
   ul {
     display: flex;
