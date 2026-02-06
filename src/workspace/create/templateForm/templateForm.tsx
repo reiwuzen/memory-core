@@ -11,7 +11,7 @@ type TemplateFormProps = {
 
 const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
   const { createMemoryItem } = MemoryItemService();
-  const {switchActiveTab} = useActiveTab();
+  const {setActiveTabTypeAndView} = useActiveTab();
   const [title, setTitle] = useState(selectedTemplate.initialTitle);
   const [type, setType] = useState(selectedTemplate.memoryType);
 
@@ -62,7 +62,7 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
                   title as string,
                   type,
                 );
-                switchActiveTab('memory_space')
+                setActiveTabTypeAndView('memory_space','list')
                 
               } catch (err) {
                 console.error("Failed to save memory:", err);

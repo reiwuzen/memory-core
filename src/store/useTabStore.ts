@@ -9,25 +9,28 @@ export const useTabStore = create<TabStore>((set) => ({
       type: "overview",
       isActive: true,
       timeline: [],
+      view: undefined,
     },
   ],
   activeTabId: "tab-1",
 
-  setActiveTabId:(id)=>set({
-    activeTabId: id
-  }),
-
-  switchTab: (id, type) =>
-    set((state) => {
-      let t = state.tabs.find((tab) => tab.id === id);
-      if (!t) {
-        return { state };
-      }
-      t.type = type;
-      const newTabs = state.tabs.filter((tab) => tab.id !== id);
-      return {
-        activeTabId: id,
-        tabs: [...newTabs, t],
-      };
+  setActiveTabId: (id) =>
+    set({
+      activeTabId: id,
     }),
+
+  switchTab: (id, type, view) =>
+  set((state) => ({
+    activeTabId: id,
+    tabs: state.tabs.map((tab) =>
+      tab.id === id
+        ? {
+            ...tab,
+            type,
+            view,
+          }
+        : tab
+    ),
+  })),
+
 }));

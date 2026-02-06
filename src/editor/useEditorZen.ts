@@ -9,17 +9,15 @@ type OpenMenu = {
   type: "add" | "more";
 } | null;
 
-type Memory = {
-  mI:MemoryItem; selectedMN: MemoryNode;
-} | null;
+
 
 type EditorState = {
   /* ---------- STATE ---------- */
   blocks: Block[];
   openMenu: OpenMenu;
   
-  memory: Memory
-  setMemory: (  m: Memory ) => void
+
+
 
   /* ---------- UI ---------- */
   setOpenMenu: (menu: OpenMenu) => void;
@@ -43,11 +41,7 @@ export const useEditorZen = create<EditorState>((set, get) => ({
     },
   ],
   openMenu: null,
-  memory: null
-, 
-setMemory:(mI)=>set({
-  memory:mI
-}),
+
  onClickBlockMenuItem: (block, changeToType) => {
     let returnId: string;
     block.content === ""
