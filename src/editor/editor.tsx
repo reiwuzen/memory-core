@@ -1,46 +1,22 @@
 import "./editor.scss";
-import { useEffect, useRef } from "react";
-import BlockMenu from "./blockMenu";
+import { useEffect, useRef, useState } from "react";
 import { useEditorZen } from "./useEditorZen";
 import { focusEnd } from "@/helper/focusEl";
-// import { MemoryNodeService } from "@/service/memoryNodeService";
-import { MemoryItemService } from "@/service/memoryItemService";
-import { useActiveTab } from "@/hooks/useActiveTab";
-import { useMemoryStore } from "@/store/useMemoryStore";
+import { AnyBlock, Block } from "@/types/editor";
+import { widenBlock } from "@/helper/widenBlock";
+import BlockMenu from "./blockMenu";
 
 const Editor = () => {
-  const pendingFocusId = useRef<string | null>(null);
-  const {
-    blocks,
-    openMenu,
-    setOpenMenu,
-    insertBlockAfter,
-    // changeBlockType,
-    deleteBlock,
-    updateBlockContent,
-    onClickBlockMenuItem,
-    onSave,
-  } = useEditorZen();
-  const {memory ,reloadMemory} = useMemoryStore();
-  const { setActiveTabTypeAndView } = useActiveTab();
-  const {addNewNodeToExistingMemoryItem} = MemoryItemService();
-  // const { createMemoryNode } = MemoryNodeService();
-  // const {setActiveNodeIdOfMemoryItem} =MemoryItemService();
-  const blockRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const blockMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!pendingFocusId.current) return;
-    console.log("getting el");
-    const el = blockRefs.current.get(pendingFocusId.current);
-    if (el) {
-      focusEnd(el);
-    }
+  const pendingFocusId = useRef<string | null>(null);
+  const blockRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-    pendingFocusId.current = null;
-  }, [blocks]);
+  const { blocks, insertBlockAfter, deleteBlock, updateBlockContent, openMenu, setOpenMenu,editable } =
+    useEditorZen();
+
   useEffect(() => {
-    const handleDropDownClose = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (
         blockMenuRef.current &&
         !blockMenuRef.current.contains(e.target as Node)
@@ -49,120 +25,116 @@ const Editor = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleDropDownClose);
-    return () => document.removeEventListener("mousedown", handleDropDownClose);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  /* ---------- Focus management ---------- */
+  useEffect(() => {
+    if (!pendingFocusId.current) return;
+
+    const el = blockRefs.current.get(pendingFocusId.current);
+    if (el) focusEnd(el);
+
+    pendingFocusId.current = null;
   }, [blocks]);
 
-  /* ---------- DOM refs (local, NOT in store) ---------- */
+  /* ---------- Keyboard handling ---------- */
+  const handleKeyDown = (e: React.KeyboardEvent, block: AnyBlock) => {
+    if (e.key === "Backspace") {
+      const el = blockRefs.current.get(block.id);
+      if (!el) return;
+
+      const text = el.textContent ?? "";
+
+      if (text.length === 0 && blocks.length > 1 && block.type !== "code") {
+        e.preventDefault();
+        pendingFocusId.current = deleteBlock(block.id);
+      }
+
+      return;
+    }
+    if (e.key === 'Enter' && e.shiftKey){
+      return
+    }
+    if(e.key === 'Enter' && block.type === 'code' && e.ctrlKey || e.metaKey){
+      e.preventDefault();
+
+      pendingFocusId.current = insertBlockAfter(block.id, block.type);
+      return
+    }
+    if (e.key === "Enter") {
+      if (block.type === "code"){
+        // console.log('enter inside code block')
+        return}
+        e.preventDefault();
+
+      pendingFocusId.current = insertBlockAfter(block.id, block.type);
+      
+    }
+  };
+
+  /* ---------- Content sync ---------- */
+  const handleInput = (e: React.FormEvent<HTMLDivElement>, block: Block) => {
+    if (block.type === "code") {
+      updateBlockContent(block.id, {
+        text: e.currentTarget.textContent ?? "",
+      });
+      return;
+    }
+
+    updateBlockContent(block.id, [
+      {
+        type: "text",
+        text: e.currentTarget.textContent ?? "",
+      },
+    ]);
+  };
 
   return (
     <div className="editor">
-      <button
-        className="editor-save-btn"
-        onClick={async (e) => {
-          e.stopPropagation();
-          e.preventDefault()
-          if (memory === null) return
-          const { blocks: Blocks } = onSave(blocks);
-          
-          
-             {
-               await addNewNodeToExistingMemoryItem(memory.memoryItem,
-                memory.activeNode.title,
-                memory.activeNode.memory_type,JSON.stringify(Blocks,null,2)
-              )
-               await reloadMemory(memory.memoryItem.memory_id)
-              // console.log(memoryItem,activeNode,nodes );
-              setActiveTabTypeAndView('memory_space','detail')
-            }
-          
-        }}
-      >
-        Save
-      </button>
       <div className="editable-content">
         {blocks.map((block) => (
           <div className="editor-block-row" key={block.id}>
-            {/* ---------- CONTROLS ---------- */}
-            <div
-              className={`editor-block-controls ${openMenu ? "active" : ""}`}
-            >
-              <button
-                className="add"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setOpenMenu({ blockId: block.id, type: "add" });
+            {openMenu?.blockId === block.id && (
+              <BlockMenu
+                block={widenBlock(block)}
+                mode={openMenu.mode}
+                onClose={() => setOpenMenu(null)}
+                onAddBlock={(type) => {
+                  if (
+                    type !== "bullet-list" &&
+                    type !== "number-list" &&
+                    type !== "todo"
+                  )
+                    pendingFocusId.current = insertBlockAfter(block.id, type);
                 }}
-              >
+                onChangeBlockType={(type) => {
+                  // optional: implement later
+                  // pendingFocusId.current = replaceBlock(block.id, type);
+                }}
+              />
+            )}
+            {/* ---------- GUTTER ---------- */}
+            <div className="editor-block-controls">
+              <button className="add" onClick={() => {setOpenMenu({blockId: block.id, mode: 'add'})}}>
                 +
               </button>
-
-              <button
-                className="drag"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setOpenMenu({ blockId: block.id, type: "more" });
-                }}
-              >
-                ⋮⋮
-              </button>
+              <button className="drag">⋮⋮</button>
             </div>
 
             {/* ---------- CONTENT ---------- */}
             <div
-              className="editor-block-content"
-              contentEditable
+              className={`editor-block editor-${block.type}`}
+              contentEditable= {editable}
               suppressContentEditableWarning
               data-type={block.type}
               ref={(el) => {
                 if (el) blockRefs.current.set(block.id, el);
               }}
-              onKeyDown={(e) => {
-                /* Backspace → delete empty block */
-                if (
-                  e.key === "Backspace" &&
-                  block.content === "" &&
-                  blocks.length > 1
-                ) {
-                  e.preventDefault();
-                  pendingFocusId.current = deleteBlock(block.id);
-
-                  return;
-                }
-
-                /* Enter → insert block */
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  pendingFocusId.current = insertBlockAfter(
-                    block.id,
-                    block.type,
-                  );
-                }
-              }}
-              onInput={(e) =>
-                updateBlockContent(block.id, e.currentTarget.textContent ?? "")
-              }
+              onKeyDown={(e) => handleKeyDown(e, widenBlock(block))}
+              onInput={(e) => handleInput(e, block)}
             />
-
-            {/* ---------- MENU ---------- */}
-            {openMenu?.blockId === block.id && (
-              <BlockMenu
-                block={block}
-                focusId={pendingFocusId}
-                openMenuProp={openMenu}
-                blockMenuRef={blockMenuRef as React.RefObject<HTMLDivElement>}
-                onClose={() => setOpenMenu(null)}
-                onClick_BlockMenuItem={(changeToType) => {
-                  pendingFocusId.current = onClickBlockMenuItem(
-                    block,
-                    changeToType,
-                  );
-                  console.log(`pending focus id: ${pendingFocusId.current} `);
-                }}
-              />
-            )}
           </div>
         ))}
       </div>
