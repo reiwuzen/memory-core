@@ -49,5 +49,5 @@ export const useTags = () => {
     loadTags();
   }, [loadTags]);
 
-  return { tags, loading, error, saveTag, updateTag, reload: loadTags, removeTag: deleteTag, addTagToNode };
+  return { tags, loading, error, saveTag, updateTag, reloadTags: loadTags, removeTag: deleteTag, addTagToNode };
 };
