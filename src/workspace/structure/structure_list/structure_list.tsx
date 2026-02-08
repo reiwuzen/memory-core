@@ -1,3 +1,4 @@
+import './structure_list.scss'
 import { useTags } from "@/hooks/useTag";
 import { priorityBand } from "../helper";
 import { Tag } from "@/types/tag";
