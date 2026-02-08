@@ -1,3 +1,4 @@
+import './structure_list.scss'
 import { useTags } from "@/hooks/useTag";
 import { priorityBand } from "../helper";
 import { Tag } from "@/types/tag";
@@ -6,7 +7,7 @@ type StructureListProps = {
   onSelectTag: (tag: Tag) => void;
 };
 const StructureList = ({ onSelectTag }: StructureListProps) => {
-  const { tags, loading, error, removeTag, reload } = useTags();
+  const { tags, loading, error, removeTag, reloadTags } = useTags();
   {
     loading && <p>Loading tags...</p>;
   }
@@ -46,7 +47,7 @@ const StructureList = ({ onSelectTag }: StructureListProps) => {
               onClick={(e) => {
                 e.stopPropagation(); // ← THIS is the key
                 removeTag(tag.id);
-                reload();
+                reloadTags();
               }}
             >
               ✕
