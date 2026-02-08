@@ -21,8 +21,8 @@ export const useActiveTab = () => {
 
   return {
     activeTab,
-    hasActiveTab: !!activeTab, // convenience flag
-    setActiveTabView, // always exists
-    setActiveTabTypeAndView, // always exists
+    hasActiveTab: !!activeTab, 
+    setActiveTabView, 
+    setActiveTabTypeAndView, 
   };
 };

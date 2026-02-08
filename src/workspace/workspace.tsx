@@ -1,10 +1,9 @@
-import { useTabStore } from "@/store/useTab.store";
+import { useTab } from "@/hooks/useTab";
 import "./workspace.scss";
-import { TAB_COMPONENTS } from "@/types/tab";
 const Workspace = () => {
-  const { activeTabId, tabs } = useTabStore();
-  const activeTab = tabs.find((tab) => tab.id === activeTabId);
-  const ActiveTabComponent = activeTab ? TAB_COMPONENTS[activeTab.type] : null;
+  const {tabDefaultComp, tabsData,activeTabId} =useTab()
+  const activeTab = tabsData.tabs.find((tab) => tab.id === activeTabId);
+  const ActiveTabComponent = activeTab ? tabDefaultComp[activeTab.type] : null;
   return (
     <div className="workspace">
       {ActiveTabComponent && <ActiveTabComponent />}

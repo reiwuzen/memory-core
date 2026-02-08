@@ -1,11 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Tag } from "@/types/tag";
+import { useTagStore } from "@/store/useTag.store";
+import { Result } from "@/types/result";
 
 export const useTags = () => {
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const {tags,setTags,loading,setLoading,error,setError} =useTagStore();  
 
   const loadTags = useCallback(async () => {
     try {
@@ -34,9 +34,10 @@ export const useTags = () => {
 
   const deleteTag = async (tagId: string) => {
     await invoke("delete_tag", { tagId });
+    await loadTags();
   }
 
-  const addTagToNode = async (memoryId:string,nodeId:string,tag:Tag) => {
+  const addTagToNode = async (memoryId:string,nodeId:string,tag:Tag): Promise<Result<never,string>> => {
     try{
 
       await invoke("upsert_tag_on_node",{memoryId,nodeId,tag:tag})
@@ -45,9 +46,19 @@ export const useTags = () => {
       return {ok:false, error: String(err)}
     }
   }
+  const tagsActions ={
+    save: saveTag,
+    update: updateTag,
+    remove: deleteTag
+  }
+  const tagsData = {
+    tags,
+    loading,
+    error
+  }
   useEffect(() => {
     loadTags();
   }, [loadTags]);
 
-  return { tags, loading, error, saveTag, updateTag, reloadTags: loadTags, removeTag: deleteTag, addTagToNode };
+  return { tagsData,   reloadTags: loadTags,  tagsActions,addTagToNode };
 };

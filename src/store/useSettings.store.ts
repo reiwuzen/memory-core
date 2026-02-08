@@ -26,6 +26,10 @@ export const useSettingsStore = create<StoreState>((set)=>({
     setAnalytics: (b)=>set({
         analytics:b
     }),
+    /**
+     * resets the setting store
+     * @returns void
+     */
     resetSettings: () => set({
         theme: DS.theme,
         debugsLog: DS.debugsLog,

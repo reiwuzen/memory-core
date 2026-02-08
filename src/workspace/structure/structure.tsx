@@ -10,9 +10,8 @@ import { useActiveTab } from "@/hooks/useActiveTab";
 const Structure = () => {
   const [tag, setTag] = useState<Tag | null>(null);
   const {activeTab, setActiveTabTypeAndView} = useActiveTab();
-  // const [view, setView] = useState<"list" | "details" | "create">("list");
 
-  const { saveTag, reloadTags: reload, removeTag } = useTags();
+  const {  reloadTags: reload,tagsActions } = useTags();
   if(!activeTab) return
   return (
     <div className="structure">
@@ -25,7 +24,7 @@ const Structure = () => {
         />
       )}
       {activeTab.view === "details" && tag && <StructureDetails tag={tag} onDelete={async(tagToDelete)=>{
-        await removeTag(tagToDelete.id);
+        await tagsActions.remove(tagToDelete.id);
         setTag(null);
         await reload();
         setActiveTabTypeAndView('structure',"list");
@@ -34,7 +33,7 @@ const Structure = () => {
       {activeTab.view === "add" && (
         <StructureCreate
           onCreate={async (createdTag) => {
-            await saveTag(createdTag);
+            await tagsActions.save(createdTag);
             setTag(null)
             await reload()
             setActiveTabTypeAndView('structure',"list")

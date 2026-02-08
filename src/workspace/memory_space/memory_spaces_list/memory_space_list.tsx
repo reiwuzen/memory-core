@@ -1,4 +1,4 @@
-import { MemoryItemService } from "@/service/memoryItem.service";
+import { useMemory } from "@/hooks/useMemory";
 import "./memory_space_list.scss";
 import { MemoryItem, MemoryNode } from "@/memory/schema";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ type memorySpaceListProps = {
   onSelect: (memory: MemoryItemWithActiveNode) => void;
 };
 const MemorySpaceList = ({ onSelect }: memorySpaceListProps) => {
-  const { loadAllMemoryItems } = MemoryItemService();
+  const {loadAllMemoryItems} =useMemory()
 
   const [memoryItems, setMemoryItems] = useState<MemoryItemWithActiveNode[]>(
     [],

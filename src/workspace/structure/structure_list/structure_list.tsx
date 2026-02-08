@@ -8,15 +8,15 @@ type StructureListProps = {
   onSelectTag: (tag: Tag) => void;
 };
 const StructureList = ({ onSelectTag }: StructureListProps) => {
-  const { tags, loading, error, removeTag, reloadTags } = useTags();
-  if (loading)
+  const { tagsData,tagsActions  } = useTags();
+  if (tagsData.loading)
   {
      return <p>Loading tags...</p>;
   }
-  if(error)
+  if(tagsData.error)
   {
      
-      return <p className="error">Error loading tags: {String(error)}</p>
+      return <p className="error">Error loading tags: {String(tagsData.error)}</p>
       
     
   }
@@ -25,13 +25,13 @@ const StructureList = ({ onSelectTag }: StructureListProps) => {
       <h3>Structure List</h3>
 
       <ul className="tag-list">
-        {tags.length === 0 && (
+        {tagsData.tags.length === 0 && (
           <p className="hint">
             No tags available. Create one! Using the + button in the top right
             corner.
           </p>
         )}
-        {tags.map((tag) => (
+        {tagsData.tags.map((tag) => (
           <li
             key={tag.id}
             className="tag-item"
@@ -48,8 +48,7 @@ const StructureList = ({ onSelectTag }: StructureListProps) => {
               className="delete"
               onClick={(e) => {
                 e.stopPropagation(); // ← THIS is the key
-                removeTag(tag.id);
-                reloadTags();
+                tagsActions.remove(tag.id);
               }}
             >
               ✕

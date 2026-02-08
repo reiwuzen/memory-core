@@ -2,7 +2,8 @@ import { useState } from "react";
 import "./blockMenu.scss";
 // import BlockTypeMenu from "./blockTypeMenu";
 // import TextColorMenu from "./textColorMenu";
-import { BLOCK_ITEMS, BlockType } from "@/types/editor";
+import { BlockType } from "@/types/editor";
+import { BLOCK_ITEMS } from "@/constants/editor";
 import type { AnyBlock } from "@/types/editor";
 
 type BlockMenuMode = "add" | "more";

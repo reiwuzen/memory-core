@@ -1,8 +1,11 @@
+import { useSettings } from "@/hooks/useSettings";
 import "./generalSettings.scss";
 import { toast } from "sonner";
 
 const GeneralSettings = () => {
+  const {settingsData, settingsAction} =useSettings();
   // const {setTheme, theme} = useSettings();
+  const theme = settingsData.theme
   return (
     <div className="generalSettings">
       <h3>General</h3>
@@ -13,11 +16,21 @@ const GeneralSettings = () => {
           <p className="p2">App follows system theme</p>
         </div>
         <div className="d2">
-          <button >Light</button>
-          <button >Dark</button>
-          <button >BlueGrey</button>
-          <button >System</button>
-          <button >Custom</button>
+          <button
+          className={`${theme === 'light' ? 'active': ''}`}
+           onClick={()=>settingsAction.theme.preset.light()} >Light</button>
+          <button
+          className={`${theme === 'dark' ? 'active': ''}`}
+          onClick={()=>settingsAction.theme.preset.dark()}>Dark</button>
+          <button
+          className={`${theme === 'blueGrey' ? 'active': ''}`}
+          onClick={()=> settingsAction.theme.preset.blueGrey()}>BlueGrey</button>
+          <button
+          className={`${theme === 'system' ? 'active': ''}`}
+          onClick={()=>settingsAction.theme.preset.system()}>System</button>
+          <button
+          className={`${theme === 'custom' ? 'active': ''}`}
+          onClick={()=>settingsAction.theme.preset.custom()}>Custom</button>
         </div>
       </div>
  

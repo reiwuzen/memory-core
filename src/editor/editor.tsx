@@ -1,6 +1,6 @@
 import "./editor.scss";
 import { useEffect, useMemo, useRef } from "react";
-import { useEditorZen } from "./useEditorZen";
+import { useEditorZen } from "../hooks/useEditorZen";
 import { focusEnd } from "@/helper/focusEl";
 import { AnyBlock, Block } from "@/types/editor";
 import { widenBlock } from "@/helper/widenBlock";
@@ -16,13 +16,12 @@ const Editor = () => {
 
   const {
     blocks,
-    insertBlockAfter,
-    deleteBlock,
-    updateBlockContent,
-    updateBlockMeta,
+    
     openMenu,
-    setOpenMenu,
+    updateBlock,
     editable,
+    openMenuActions,
+    blockActions
   } = useEditorZen();
   const renderBlocks = useMemo(
     () =>
@@ -49,7 +48,7 @@ const Editor = () => {
         blockMenuRef.current &&
         !blockMenuRef.current.contains(e.target as Node)
       ) {
-        setOpenMenu(null);
+        openMenuActions.setToNull();
       }
     };
 
@@ -74,7 +73,7 @@ const Editor = () => {
       if (!el) return;
 
       const text = el.textContent ?? "";
-      updateBlockContent(block.id, [
+      updateBlock.content(block.id, [
         {
           type: "text",
           text,
@@ -83,7 +82,7 @@ const Editor = () => {
 
       if (text.length === 0 && blocks.length > 1 && block.type !== "code") {
         e.preventDefault();
-        pendingFocusId.current = deleteBlock(block.id);
+        pendingFocusId.current = blockActions.delete(block.id);
       }
 
       return;
@@ -97,7 +96,7 @@ const Editor = () => {
     ) {
       e.preventDefault();
 
-      pendingFocusId.current = insertBlockAfter(block.id, block.type);
+      pendingFocusId.current = blockActions.insertBlockAfter(block.id, block.type);
       return;
     }
     if (e.key === "Enter") {
@@ -107,20 +106,20 @@ const Editor = () => {
       }
       e.preventDefault();
 
-      pendingFocusId.current = insertBlockAfter(block.id, block.type);
+      pendingFocusId.current = blockActions.insertBlockAfter(block.id, block.type);
     }
   };
 
   /* ---------- Content sync ---------- */
   const handleInput = (e: React.FormEvent<HTMLSpanElement>, block: Block) => {
     if (block.type === "code") {
-      updateBlockContent(block.id, {
+      updateBlock.content(block.id, {
         text: e.currentTarget.textContent ?? "",
       });
       return;
     }
 
-    updateBlockContent(block.id, [
+    updateBlock.content(block.id, [
       {
         type: "text",
         text: e.currentTarget.textContent ?? "",
@@ -131,23 +130,23 @@ const Editor = () => {
   return (
     <div className="editor">
       <div className="editable-content">
-        {renderBlocks.map(({ block,  initialText }) => (
+        {renderBlocks.map(({ block, initialText }) => (
           <div className="editor-block-row" key={block.id}>
             {openMenu?.blockId === block.id && (
               <BlockMenu
                 block={widenBlock(block)}
                 mode={openMenu.mode}
-                onClose={() => setOpenMenu(null)}
+                onClose={() => openMenuActions.setToNull()}
                 onAddBlock={(type) => {
                   if (
                     type !== "bullet-list" &&
                     type !== "number-list" &&
                     type !== "todo"
                   ) {
-                    pendingFocusId.current = insertBlockAfter(block.id, type);
+                    pendingFocusId.current = blockActions.insertBlockAfter(block.id, type);
                   } else {
-                    const nId = insertBlockAfter(block.id, "list-item");
-                    updateBlockMeta(nId, {
+                    const nId = blockActions.insertBlockAfter(block.id, "list-item");
+                    updateBlock.meta(nId, {
                       style: type,
                       depth: 0,
                       checked: false,
@@ -155,13 +154,13 @@ const Editor = () => {
                     pendingFocusId.current = nId;
                   }
                 }}
-                onChangeBlockType={(
+                onChangeBlockType={() =>
                   // _type
-                ) => {
-                  
-                  // optional: implement later
-                  // pendingFocusId.current = replaceBlock(block.id, type);
-                }}
+                  {
+                    // optional: implement later
+                    // pendingFocusId.current = replaceBlock(block.id, type);
+                  }
+                }
               />
             )}
             {/* ---------- GUTTER ---------- */}
@@ -169,7 +168,7 @@ const Editor = () => {
               <button
                 className="add"
                 onClick={() => {
-                  setOpenMenu({ blockId: block.id, mode: "add" });
+                  openMenuActions.set({ blockId: block.id, mode: "add" });
                 }}
               >
                 +
@@ -203,7 +202,7 @@ const Editor = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     if (editable === true) {
-                      updateBlockMeta(block.id, {
+                      updateBlock.meta(block.id, {
                         ...block.meta,
                         checked: !block.meta.checked,
                       });

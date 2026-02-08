@@ -1,5 +1,5 @@
-type Theme ='light' | 'dark' | 'blueGrey' | 'system' | 'custom'
-type MemoryView= 'timeline' | 'tree' | 'list'
+export type Theme ='light' | 'dark' | 'blueGrey' | 'system' | 'custom'
+export type MemoryView= 'timeline' | 'tree' | 'list'
 
 
 export type StoreState = {
@@ -22,7 +22,7 @@ export type StoreState = {
 }
 
 type NonFunctionKeys<T> = {
-  [K in keyof T]: T[K] extends Function ? never : K
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? never : K
 }[keyof T];
 
 export type DefaultSettings = Pick<StoreState, NonFunctionKeys<StoreState>>;

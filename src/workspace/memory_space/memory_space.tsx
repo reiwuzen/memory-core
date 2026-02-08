@@ -6,10 +6,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { useActiveTab } from "@/hooks/useActiveTab";
 // import { useEditorZen } from "@/editor/useEditorZen";
 import Editor from "@/editor/editor";
-import { useMemoryStore } from "@/store/useMemory.store";
+import { useMemory } from "@/hooks/useMemory";
 
 const MemorySpace = () => {
-  const { memory: selectedMemory, setMemory } = useMemoryStore();
+  const {memory: selectedMemory,memoryActions} = useMemory()
   const { activeTab, setActiveTabView } = useActiveTab();
   if (!activeTab) return <p>Null</p>;
   // const {memory: editorMemory} = useEditorZen();
@@ -24,7 +24,7 @@ const MemorySpace = () => {
               { memoryId: memory.item.memory_id },
             );
 
-            setMemory({
+            memoryActions.memory.set({
               memoryItem: memory.item,
               activeNode: memory.active_node,
               nodes: memory_nodes,
@@ -37,7 +37,6 @@ const MemorySpace = () => {
 
       {activeTab.view === "detail" && selectedMemory && (
         <MemorySpaceItem
-          memory={selectedMemory}
           // onBack={() => setView("list")}
         />
       )}

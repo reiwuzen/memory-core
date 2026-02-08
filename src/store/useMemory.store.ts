@@ -1,12 +1,7 @@
 import { MemoryItem, MemoryNode } from "@/memory/schema";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
-
-export type Memory = {
-  memoryItem: MemoryItem;
-  activeNode: MemoryNode;
-  nodes?: MemoryNode[];
-};
+import { Memory } from "@/types/memory";
 
 type MemoryStore = {
   memory: Memory | null;
@@ -21,9 +16,19 @@ export const useMemoryStore = create<MemoryStore>((set) => ({
     set((s)=>({
       memory: {...s.memory, ...m} as Memory,
     })),
+    /**
+     * resets memory from memory store
+     * @returns void
+     */
     resetMemory: () => set({
       memory: null
     }),
+
+    /**
+     * reloads Memory of given memory Id
+     * @param memoryId 
+     * @returns `memory`
+     */
   reloadMemory: async (memoryId) => {
     const { memory_item: memoryItem, active_node:activeNode, nodes } =
   await invoke<{

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import "./templateForm.scss";
 import { MemoryTemplate } from "@/memory/template";
-import { MemoryItemService } from "@/service/memoryItem.service";
 import { MemoryType } from "@/memory/schema";
 import { useActiveTab } from "@/hooks/useActiveTab";
+import { useMemory } from "@/hooks/useMemory";
 type TemplateFormProps = {
   selectedTemplate: MemoryTemplate;
 };
@@ -11,7 +11,7 @@ type TemplateFormProps = {
 const memoryTypes: MemoryType[] = ["Diary", "Fact", "Event", "Generic"];
 
 const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
-  const { createMemoryItem } = MemoryItemService();
+  const {memoryActions} =useMemory();
   const { setActiveTabTypeAndView } = useActiveTab();
   const [title, setTitle] = useState(selectedTemplate.initialTitle);
   const [type, setType] = useState(selectedTemplate.memoryType);
@@ -85,7 +85,7 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
             disabled={!title.trim()}
             onClick={async () => {
               try {
-                await createMemoryItem(title as string, type);
+                await memoryActions.memoryItem.create(title, type);
                 setActiveTabTypeAndView("memory_space", "list");
               } catch (err) {
                 console.error("Failed to save memory:", err);

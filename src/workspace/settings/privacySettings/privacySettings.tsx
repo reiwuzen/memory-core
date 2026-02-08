@@ -2,12 +2,9 @@ import { useState } from "react";
 import "./privacySettings.scss";
 import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
-import { useSettingsStore } from "@/store/useSettings.store";
 const PrivacySettings = () => {
-const {clearData} = useSettings();
-const {localOnlyMode,setLocalOnlyMode} =useSettingsStore()
+const {clearData , settingsData,settingsAction} = useSettings();
   // const [localOnly, setLocalOnly] = useState(true);
-  const [analytics, setAnalytics] = useState(false);
   const [aiAccess, setAiAccess] = useState(false);
   const [autoBackup, setAutoBackup] = useState(true);
   const [backupFrequency, setBackupFrequency] = useState("Daily");
@@ -25,8 +22,8 @@ const {localOnlyMode,setLocalOnlyMode} =useSettingsStore()
           <span>Local-only mode</span>
           <input
             type="checkbox"
-            checked={localOnlyMode}
-            onChange={()=>setLocalOnlyMode(!!!localOnlyMode)}
+            checked={settingsData.localOnlyMode}
+            onChange={()=>settingsAction.localMode.toggle()}
           />
         </label>
 
@@ -34,8 +31,8 @@ const {localOnlyMode,setLocalOnlyMode} =useSettingsStore()
           <span>Send anonymous usage analytics</span>
           <input
             type="checkbox"
-            checked={analytics}
-            onChange={()=>setAnalytics(!analytics)}
+            checked={settingsData.analytics}
+            onChange={()=>settingsAction.analytics.toggle}
           />
         </label>
 

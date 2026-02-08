@@ -1,12 +1,13 @@
 import { useState } from "react";
 import "./advancedSettings.scss";
+import { useSettings } from "@/hooks/useSettings";
+import { toast } from "sonner";
 
 const AdvancedSettings = () => {
-
+  const {settingsData,settingsAction,} = useSettings();
   const [performanceMode, setPerformanceMode] = useState(false);
   const [reduceAnimations, setReduceAnimations] = useState(false);
   const [hardwareAccel, setHardwareAccel] = useState(true);
-  const [debugLogs, setDebugLogs] = useState(false);
 
   return (
     <div className="settings_section">
@@ -73,8 +74,8 @@ const AdvancedSettings = () => {
           <span>Enable debug logs</span>
           <input
             type="checkbox"
-            checked={debugLogs}
-            onChange={()=>setDebugLogs(!debugLogs)}
+            checked={settingsData.debugLogs}
+            onChange={()=>settingsAction.debugLogs.toggle()}
           />
         </label>
 
@@ -97,7 +98,12 @@ const AdvancedSettings = () => {
 
         <label className="setting">
           <span>Reset application settings</span>
-          <button className="danger">Reset</button>
+          <button className="danger"
+          onClick={()=>{
+            settingsAction.reset()
+            toast.success("Successfully reset settings to defaults")
+          }}
+          >Reset</button>
         </label>
 
       </div>

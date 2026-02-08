@@ -1,38 +1,33 @@
 import { useActiveTab } from "@/hooks/useActiveTab";
 import "./memory_space_item.scss";
-import { MemoryItemService } from "@/service/memoryItem.service";
-import { Memory, useMemoryStore } from "@/store/useMemory.store";
 import { useTags } from "@/hooks/useTag";
 import { useEffect, useRef, useState } from "react";
 import Editor from "@/editor/editor";
 import { toast } from "sonner";
-import { useEditorZen } from "@/editor/useEditorZen";
+import { useEditorZen } from "@/hooks/useEditorZen";
 import { Block } from "@/types/editor";
-type MemorySpaceItemProps = {
-  memory: Memory;
-};
+import { useMemory } from "@/hooks/useMemory";
 
-const MemorySpaceItem = ({ memory }: MemorySpaceItemProps) => {
+
+const MemorySpaceItem = () => {
   // const [editable, setEditable] = useState(false);
-  const { deleteMemoryItem } = MemoryItemService();
+  const {memoryActions,memory} =useMemory();
   const { setActiveTabView } = useActiveTab();
-  const { tags, addTagToNode } = useTags();
+  const { tagsData, addTagToNode } = useTags();
   const [showTagPicker, setShowTagPicker] = useState<boolean>(false);
-  const { setMemory, reloadMemory } = useMemoryStore();
   const { activeNode } = memory;
-  const { addNewNodeToExistingMemoryItem } = MemoryItemService();
+  const { blocks,  editable, editableActions, blockActions } = useEditorZen();
   const tagPickerRef = useRef<HTMLDivElement>(null);
 
   const nodeTagIds = new Set(activeNode.tags.map((t) => t.id));
 
-  const availableTags = tags.filter((tag) => !nodeTagIds.has(tag.id));
-  const { blocks, setBlocks, setEditable, editable } = useEditorZen();
+  const availableTags = tagsData.tags.filter((tag) => !nodeTagIds.has(tag.id));
 
   useEffect(() => {
     const b: Block[] = JSON.parse(activeNode.content_json);
     console.log(activeNode.content_json);
     console.log(b);
-    setBlocks(b);
+    blockActions.set(b);
     const handleTagPicker = (e: MouseEvent) => {
       if (
         tagPickerRef.current &&
@@ -45,23 +40,23 @@ const MemorySpaceItem = ({ memory }: MemorySpaceItemProps) => {
   }, []);
 
   const saveNode = async () => {
-    await addNewNodeToExistingMemoryItem(
+    await memoryActions.memoryItem.addNode(
       memory.memoryItem,
       activeNode.title,
       activeNode.memory_type,
       JSON.stringify(blocks),
     );
 
-    await reloadMemory(activeNode.memory_id);
-    setEditable(false);
+    await memoryActions.memory.reload(activeNode.memory_id);
+    editableActions.disable()
   };
 
   const deleteAndExit = async () => {
-    const res = await deleteMemoryItem(activeNode.memory_id);
+    const res = await memoryActions.memoryItem.delete(activeNode.memory_id);
 
-   if (res.ok !== true) {
-     throw new Error(res.error ?? "Failed to delete memory Item")
-   }
+    if (res.ok !== true) {
+      throw new Error(res.error ?? "Failed to delete memory Item");
+    }
 
     setActiveTabView("list");
   };
@@ -76,16 +71,14 @@ const MemorySpaceItem = ({ memory }: MemorySpaceItemProps) => {
             onClick={(e) => {
               e.stopPropagation();
               // e.preventDefault();
-              if (memory)
-              {
-                
-                  setMemory({
-                    memoryItem: memory.memoryItem,
-                    activeNode: memory.activeNode,
-                    nodes: memory.nodes,
-                  });
+              if (memory) {
+                memoryActions.memory.set({
+                  memoryItem: memory.memoryItem,
+                  activeNode: memory.activeNode,
+                  nodes: memory.nodes,
+                });
               }
-              setEditable(true);
+              editableActions.enable()
               // setActiveTabView("editor");
             }}
           >
@@ -192,7 +185,7 @@ const MemorySpaceItem = ({ memory }: MemorySpaceItemProps) => {
                       //toast
                     }
                     setShowTagPicker(false);
-                    reloadMemory(activeNode.memory_id);
+                    memoryActions.memory.reload(activeNode.memory_id);
                   }}
                 >
                   {t.label}

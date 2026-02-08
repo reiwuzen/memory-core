@@ -1,54 +1,9 @@
-import { create } from "zustand";
-import type {  Block, BlockType } from "@/types/editor";
 import { createBlock } from "@/helper/createBlock";
 import { widenBlock } from "@/helper/widenBlock";
+import { EditorState } from "@/types/editor";
+import { create } from "zustand";
 
-
-type OpenMenu = {
-  blockId: string;
-  mode: "add" | "more";
-} | null;
-
-type EditorState = {
-  /* ---------- STATE ---------- */
-  blocks: Block[];
-  setBlocks: (b:Block[]) => void
-  editable: boolean
-  setEditable: (v: boolean) =>void
-  openMenu: OpenMenu;
-
-  /* ---------- UI ---------- */
-  setOpenMenu: (menu: OpenMenu) => void;
-
-  /* ---------- BLOCK OPS ---------- */
-  insertBlockAfter: <T extends BlockType>(
-    afterId: string,
-    type: T
-  ) => string;
-
-  replaceBlock: <T extends BlockType>(
-    id: string,
-    type: T
-  ) => string;
-
-  deleteBlock: (id: string) => string;
-
-  updateBlockContent: <T extends BlockType>(
-    id: string,
-    content: Block<T>["content"]
-  ) => void;
-
-  updateBlockMeta: <T extends BlockType>(
-    id: string,
-    meta: Partial<Block<T>["meta"]>
-  ) => void;
-
-  onSave: () => { blocks: Block[] };
-};
-
-
-
-export const useEditorZen = create<EditorState>((set, get) => ({
+export const useEditorStore = create<EditorState>((set, get) => ({
   /* ---------- INITIAL STATE ---------- */
   blocks: [createBlock("paragraph")],
   setBlocks: (b)=>set({
@@ -63,7 +18,12 @@ export const useEditorZen = create<EditorState>((set, get) => ({
   setOpenMenu: (openMenu) => set({ openMenu }),
 
   /* ---------- BLOCK OPS ---------- */
-
+/**
+ * inserts blocks after a given id of give type
+ * @param afterId the id after which block to be inserted
+ * @param type type of block to be inserted
+ * @returns 
+ */
   insertBlockAfter: (afterId, type) => {
     
     const newBlock = widenBlock(createBlock(type))
@@ -79,7 +39,12 @@ export const useEditorZen = create<EditorState>((set, get) => ({
 
     return newBlock.id;
   },
-
+  /**
+   * changes the type of block with given id
+   * @param id id of block to modify
+   * @param type type to be set to block
+   * @returns id of block whose type was changed
+   */
   replaceBlock: (id, type) => {
     const newBlock = widenBlock(createBlock(type));
 
@@ -89,7 +54,11 @@ export const useEditorZen = create<EditorState>((set, get) => ({
 
     return newBlock.id;
   },
-
+  /**
+   * delete the block of given id
+   * @param id id of block
+   * @returns prev id than deleted block in blocks array
+   */
   deleteBlock: (id) => {
     const { blocks } = get();
     if (blocks.length === 1) return "";
@@ -103,7 +72,11 @@ export const useEditorZen = create<EditorState>((set, get) => ({
     set({ blocks: blocks.filter((b) => b.id !== id) });
     return focusId;
   },
-
+  /**
+   * updates the content of block of given id
+   * @param id id of interested block
+   * @param content content to update
+   */
   updateBlockContent: (id, content) => {
     set((state) => ({
       blocks: state.blocks.map((b) =>
@@ -111,7 +84,11 @@ export const useEditorZen = create<EditorState>((set, get) => ({
       ),
     }));
   },
-
+  /**
+   * updates the meta of block of given id
+   * @param id id of interested block
+   * @param meta meta to update
+   */
   updateBlockMeta: (id, meta) => {
     set((state) => ({
       blocks: state.blocks.map((b) =>
