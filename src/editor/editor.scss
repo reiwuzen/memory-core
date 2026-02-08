@@ -79,7 +79,9 @@
         /* -------------------------
      TEXT BLOCKS
   -------------------------- */
-
+        .editor-text{
+          outline: none;
+        }
         &[data-type="paragraph"] {
           font-weight: 400;
         }

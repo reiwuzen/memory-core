@@ -1,8 +1,8 @@
+import { BLOCK_DEFAULT_CONTENT, BLOCK_DEFAULT_META } from "@/constants/editor";
 import {
   Block,
   BlockType,
-  BLOCK_DEFAULT_META,
-  BLOCK_DEFAULT_CONTENT,
+
 } from "@/types/editor";
 
 export function createBlock<T extends BlockType= BlockType>(type: T): Block<T> {

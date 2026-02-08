@@ -79,6 +79,7 @@ const MemorySpaceItem = () => {
                 });
               }
               editableActions.enable()
+              console.log('clicked edit')
               // setActiveTabView("editor");
             }}
           >

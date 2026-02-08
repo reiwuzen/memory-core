@@ -1,5 +1,5 @@
 import "./editor.scss";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useEditorZen } from "../hooks/useEditorZen";
 import { focusEnd } from "@/helper/focusEl";
 import { AnyBlock, Block } from "@/types/editor";
@@ -11,7 +11,7 @@ const Editor = () => {
   const blockMenuRef = useRef<HTMLDivElement>(null);
 
   const pendingFocusId = useRef<string | null>(null);
-  const blockRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const blockRefs = useRef<Map<string, HTMLSpanElement>>(new Map());
   const hydratedBlocks = useRef(new Set<string>());
 
   const {
@@ -56,17 +56,19 @@ const Editor = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  /* ---------- Focus management ---------- */
-  useEffect(() => {
-    if (!pendingFocusId.current) return;
+  useLayoutEffect(() => {
+  if (!pendingFocusId.current) return;
 
-    const el = blockRefs.current.get(pendingFocusId.current);
-    if (el) focusEnd(el);
+  const el = blockRefs.current.get(pendingFocusId.current);
+  if (el) {
+    focusEnd(el);
+  }
+  console.log('el: ',el)
 
-    pendingFocusId.current = null;
-  }, [blocks]);
+  pendingFocusId.current = null;
+}, [blocks]);
 
-  /* ---------- Keyboard handling ---------- */
+
   const handleKeyDown = (e: React.KeyboardEvent, block: AnyBlock) => {
     if (e.key === "Backspace") {
       const el = blockRefs.current.get(block.id);
@@ -107,6 +109,7 @@ const Editor = () => {
       e.preventDefault();
 
       pendingFocusId.current = blockActions.insertBlockAfter(block.id, block.type);
+      console.log(block.id , pendingFocusId.current)
     }
   };
 
@@ -190,10 +193,7 @@ const Editor = () => {
               data-meta-checked={
                 block.type === "list-item" ? block.meta.checked : ""
               }
-              ref={(el) => {
-                if (!el) return;
-                blockRefs.current.set(block.id, el);
-              }}
+              
             >
               {block.type === "list-item" && block.meta.style === "todo" && (
                 <span
@@ -219,6 +219,7 @@ const Editor = () => {
                 suppressContentEditableWarning
                 ref={(el) => {
                   if (!el) return;
+                   blockRefs.current.set(block.id, el);
                   if (hydratedBlocks.current.has(block.id)) return;
                   el.textContent = initialText;
                   hydratedBlocks.current.add(block.id);

@@ -24,8 +24,8 @@ export const useEditorZen = () => {
   }
 
   const editableActions = {
-    enable: () => setEditable(false),
-    disable: () => setEditable(true),
+    enable: () => setEditable(true),
+    disable: () => setEditable(false),
     toggle: () => setEditable(!editable)
   };
 
