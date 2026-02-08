@@ -1,10 +1,10 @@
-import { useTabStore } from "@/store/useTabStore";
+import { useTabStore } from "@/store/useTab.store";
 import { TabType, TabView } from "@/types/tab";
 
 export const useActiveTab = () => {
   const { activeTabId, tabs, switchTab } = useTabStore();
 
-  const activeTab = tabs.find(tab => tab.id === activeTabId) ?? null;
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
 
   const setActiveTabView = (view: TabView<TabType>) => {
     if (!activeTab) return;
@@ -20,9 +20,9 @@ export const useActiveTab = () => {
   };
 
   return {
-    activeTab,                 
+    activeTab,
     hasActiveTab: !!activeTab, // convenience flag
-    setActiveTabView,          // always exists
-    setActiveTabTypeAndView,   // always exists
+    setActiveTabView, // always exists
+    setActiveTabTypeAndView, // always exists
   };
 };

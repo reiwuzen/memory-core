@@ -3,20 +3,22 @@ import { useTags } from "@/hooks/useTag";
 import { priorityBand } from "../helper";
 import { Tag } from "@/types/tag";
 
+
 type StructureListProps = {
   onSelectTag: (tag: Tag) => void;
 };
 const StructureList = ({ onSelectTag }: StructureListProps) => {
   const { tags, loading, error, removeTag, reloadTags } = useTags();
+  if (loading)
   {
-    loading && <p>Loading tags...</p>;
+     return <p>Loading tags...</p>;
   }
+  if(error)
   {
-    error && (
-      <>
-        <p className="error">Error loading tags: {String(error)}</p>
-      </>
-    );
+     
+      return <p className="error">Error loading tags: {String(error)}</p>
+      
+    
   }
   return (
     <div className="structure_list">

@@ -4,15 +4,10 @@ import MemorySettings from "./memorySettings/memorySettings";
 import AdvancedSettings from "./advancedSettings/advancedSettings";
 import PrivacySettings from "./privacySettings/privacySettings";
 import "./settings.scss";
-import { useState } from "react";
+// import { useState } from "react";
 import { useActiveTab } from "@/hooks/useActiveTab";
 
-type SettingsSection =
-  | "general"
-  | "memory"
-  | "privacy"
-  | "intelligence"
-  | "advanced";
+
 
 const Settings = () => {
   const {activeTab, setActiveTabTypeAndView} = useActiveTab();

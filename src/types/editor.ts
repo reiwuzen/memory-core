@@ -50,11 +50,11 @@ export type Block<T extends BlockType = BlockType> = {
   content: BlockContentMap[T];
 };
 type BlockMetaMap = {
-  paragraph: {};
+  paragraph: object;
   heading1: { level: 1 };
   heading2: { level: 2 };
   heading3: { level: 3 };
-  quote: {};
+  quote: object;
   callout: { icon?: string };
   toggle: { collapsed: boolean };
   "list-item": {
@@ -63,7 +63,7 @@ type BlockMetaMap = {
     depth: number;
   };
   code: { language?: string };
-  equation: {};
+  equation: object;
 };
 
 export const BLOCK_DEFAULT_META: {

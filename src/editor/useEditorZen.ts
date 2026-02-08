@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AnyBlock, Block, BlockType } from "@/types/editor";
+import type {  Block, BlockType } from "@/types/editor";
 import { createBlock } from "@/helper/createBlock";
 import { widenBlock } from "@/helper/widenBlock";
 

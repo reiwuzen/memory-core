@@ -1,7 +1,7 @@
 import { useActiveTab } from "@/hooks/useActiveTab";
 import "./memory_space_item.scss";
-import { MemoryItemService } from "@/service/memoryItemService";
-import { Memory, useMemoryStore } from "@/store/useMemoryStore";
+import { MemoryItemService } from "@/service/memoryItem.service";
+import { Memory, useMemoryStore } from "@/store/useMemory.store";
 import { useTags } from "@/hooks/useTag";
 import { useEffect, useRef, useState } from "react";
 import Editor from "@/editor/editor";
@@ -20,13 +20,13 @@ const MemorySpaceItem = ({ memory }: MemorySpaceItemProps) => {
   const [showTagPicker, setShowTagPicker] = useState<boolean>(false);
   const { setMemory, reloadMemory } = useMemoryStore();
   const { activeNode } = memory;
-  const {addNewNodeToExistingMemoryItem} = MemoryItemService()
+  const { addNewNodeToExistingMemoryItem } = MemoryItemService();
   const tagPickerRef = useRef<HTMLDivElement>(null);
 
   const nodeTagIds = new Set(activeNode.tags.map((t) => t.id));
 
   const availableTags = tags.filter((tag) => !nodeTagIds.has(tag.id));
-  const { blocks,setBlocks, setEditable, editable } = useEditorZen();
+  const { blocks, setBlocks, setEditable, editable } = useEditorZen();
 
   useEffect(() => {
     const b: Block[] = JSON.parse(activeNode.content_json);
@@ -45,40 +45,40 @@ const MemorySpaceItem = ({ memory }: MemorySpaceItemProps) => {
   }, []);
 
   const saveNode = async () => {
-  await addNewNodeToExistingMemoryItem(
-    memory.memoryItem,
-    activeNode.title,
-    activeNode.memory_type,
-    JSON.stringify(blocks)
-  );
+    await addNewNodeToExistingMemoryItem(
+      memory.memoryItem,
+      activeNode.title,
+      activeNode.memory_type,
+      JSON.stringify(blocks),
+    );
 
-  await reloadMemory(activeNode.memory_id);
-  setEditable(false);
-};
+    await reloadMemory(activeNode.memory_id);
+    setEditable(false);
+  };
 
-const deleteAndExit = async () => {
-  const res = await deleteMemoryItem(activeNode.memory_id);
+  const deleteAndExit = async () => {
+    const res = await deleteMemoryItem(activeNode.memory_id);
 
-  if (!res.ok) {
-    throw new Error(res.error ?? "Failed to delete memory");
-  }
+   if (res.ok !== true) {
+     throw new Error(res.error ?? "Failed to delete memory Item")
+   }
 
-  setActiveTabView("list");
-};
-
+    setActiveTabView("list");
+  };
 
   // console.log(JSON.parse(activeNode.content_json))
   return (
     <article className="memory-node">
       <div className="memory-node-accessory-bar">
-        {!!!editable ? (
+        {!editable ? (
           <button
             className="memory-node-edit-btn"
             onClick={(e) => {
               e.stopPropagation();
               // e.preventDefault();
+              if (memory)
               {
-                memory &&
+                
                   setMemory({
                     memoryItem: memory.memoryItem,
                     activeNode: memory.activeNode,
@@ -105,13 +105,12 @@ const deleteAndExit = async () => {
         ) : (
           <button
             className="memory-node-save-btn"
-            onClick={async() => {
-              toast.promise(saveNode(),{
-                loading: 'Saving node',
-                success: 'Node saved successfully',
-                error: (err) =>  `Failed to save: ${err}`
-              })
-             
+            onClick={async () => {
+              toast.promise(saveNode(), {
+                loading: "Saving node",
+                success: "Node saved successfully",
+                error: (err) => `Failed to save: ${err}`,
+              });
             }}
           >
             <svg
@@ -135,10 +134,10 @@ const deleteAndExit = async () => {
           onClick={async (e) => {
             e.stopPropagation();
             toast.promise(deleteAndExit(), {
-              loading: 'Deleting...',
-              success: 'Delete successfully',
-              error: (e) => e.message
-            })
+              loading: "Deleting...",
+              success: "Delete successfully",
+              error: (e) => e.message,
+            });
           }}
         >
           <svg

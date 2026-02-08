@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./blockMenu.scss";
 // import BlockTypeMenu from "./blockTypeMenu";
-import TextColorMenu from "./textColorMenu";
+// import TextColorMenu from "./textColorMenu";
 import { BLOCK_ITEMS, BlockType } from "@/types/editor";
 import type { AnyBlock } from "@/types/editor";
 

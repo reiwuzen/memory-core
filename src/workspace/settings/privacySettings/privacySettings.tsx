@@ -1,9 +1,12 @@
 import { useState } from "react";
 import "./privacySettings.scss";
-
+import { useSettings } from "@/hooks/useSettings";
+import { toast } from "sonner";
+import { useSettingsStore } from "@/store/useSettings.store";
 const PrivacySettings = () => {
-
-  const [localOnly, setLocalOnly] = useState(true);
+const {clearData} = useSettings();
+const {localOnlyMode,setLocalOnlyMode} =useSettingsStore()
+  // const [localOnly, setLocalOnly] = useState(true);
   const [analytics, setAnalytics] = useState(false);
   const [aiAccess, setAiAccess] = useState(false);
   const [autoBackup, setAutoBackup] = useState(true);
@@ -22,8 +25,8 @@ const PrivacySettings = () => {
           <span>Local-only mode</span>
           <input
             type="checkbox"
-            checked={localOnly}
-            onChange={()=>setLocalOnly(!localOnly)}
+            checked={localOnlyMode}
+            onChange={()=>setLocalOnlyMode(!!!localOnlyMode)}
           />
         </label>
 
@@ -84,7 +87,14 @@ const PrivacySettings = () => {
 
         <label className="setting">
           <span>Data</span>
-          <button>Clear Data</button>
+          <button onClick={(e)=>{
+            e.stopPropagation()
+            toast.promise(clearData(),{
+              loading: 'Clearing Data...',
+              success: 'Cleared Data',
+              error: e => String(e)
+            })
+          }}>Clear Data</button>
         </label>
         
 

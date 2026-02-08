@@ -131,7 +131,7 @@ const Editor = () => {
   return (
     <div className="editor">
       <div className="editable-content">
-        {renderBlocks.map(({ block, isTextLike, initialText }) => (
+        {renderBlocks.map(({ block,  initialText }) => (
           <div className="editor-block-row" key={block.id}>
             {openMenu?.blockId === block.id && (
               <BlockMenu
@@ -155,7 +155,10 @@ const Editor = () => {
                     pendingFocusId.current = nId;
                   }
                 }}
-                onChangeBlockType={(_type) => {
+                onChangeBlockType={(
+                  // _type
+                ) => {
+                  
                   // optional: implement later
                   // pendingFocusId.current = replaceBlock(block.id, type);
                 }}
