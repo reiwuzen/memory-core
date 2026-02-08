@@ -1,0 +1,118 @@
+.structure_create {
+  width: 90%;
+  padding: 26px;
+
+  background: #0c121c;
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,0.04);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  font-family: "Inter", system-ui, sans-serif;
+  color: #e6edf3;
+}
+
+/* ================= TITLE ================= */
+
+.structure_create h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* ================= LABELS ================= */
+
+.structure_create label {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+/* ================= TEXT INPUTS ================= */
+
+.structure_create input[type="text"],
+.structure_create input[type="number"] {
+  background: #1f2f46;
+  border: 1px solid rgba(255,255,255,0.05);
+
+  border-radius: 8px;
+  padding: 10px 12px;
+
+  color: white;
+  outline: none;
+
+  transition: 0.2s;
+}
+
+.structure_create input:focus {
+  border-color: #00a8b5;
+}
+
+/* ================= PRIORITY SLIDER ================= */
+
+.structure_create input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+
+  background: #1f2f46;
+  border-radius: 6px;
+  outline: none;
+}
+
+/* TRACK */
+
+.structure_create input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #1f2f46;
+  border-radius: 6px;
+}
+
+/* THUMB */
+
+.structure_create input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+
+  background: #00a8b5;
+  border-radius: 50%;
+
+  cursor: pointer;
+  margin-top: -5px;
+
+  transition: 0.2s;
+}
+
+.structure_create input[type="range"]::-webkit-slider-thumb:hover {
+  background: #00c2d4;
+}
+
+/* ================= BUTTON ================= */
+
+.structure_create button {
+  margin-top: 12px;
+
+  background: #00a8b5;
+  border: none;
+
+  padding: 10px;
+  border-radius: 10px;
+
+  color: white;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.structure_create button:hover {
+  background: #00c2d4;
+}
+
+.structure_create button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

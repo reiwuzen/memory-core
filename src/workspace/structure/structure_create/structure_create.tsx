@@ -1,6 +1,7 @@
 import { Tag } from "@/types/tag";
 import { useState } from "react";
 import { v7 as uuidv7 } from "uuid";
+import "./structure_create.scss";
 
 type StructureCreateProps = {
   onCreate: (tag: Tag) => void;
@@ -27,7 +28,7 @@ const StructureCreate = ({ onCreate }: StructureCreateProps) => {
     // reset form
     setLabel("");
     setDescription("");
-    setPriority(0.1);
+    setPriority(0);
   };
 
   return (
@@ -52,14 +53,17 @@ const StructureCreate = ({ onCreate }: StructureCreateProps) => {
 
       <label htmlFor="priority">Priority</label>
       <input
-        id="priority"
-        type="number"
-        min={-1}
-        max={1}
-        step={0.1}
-        value={priority}
-        onChange={e => setPriority(Number(e.target.value))}
+      id="priority"
+      type="range"
+      min={-1}
+      max={1}
+      step={0.01}
+      value={priority}
+      onChange={e => setPriority(Number(e.target.value))}
       />
+
+      <p className="priority_value">{priority}</p>
+
 
       <button
         onClick={handleCreate}

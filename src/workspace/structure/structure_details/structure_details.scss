@@ -1,8 +1,55 @@
 .structure_details {
+  max-width: 700px;
+  padding: 24px;
+
+  background: #0c121c;
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,0.04);
+
   position: relative;
-  .onClick_removeTag_structure_details {
-    position: absolute;
-    border: none;
-    background-color: #b9a7a8;
-  }
+
+  font-family: "Inter", system-ui, sans-serif;
+  color: #e6edf3;
+}
+
+/* TITLE */
+
+.structure_details h3 {
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+
+/* INFO ROWS */
+
+.structure_details p {
+  background: #1f2f46;
+  padding: 12px 14px;
+  border-radius: 10px;
+
+  margin-bottom: 10px;
+
+  font-size: 14px;
+}
+
+/* DELETE BUTTON */
+
+.onClick_removeTag_structure_details {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  border: none;
+  background: #ff4d4f;
+  color: white;
+
+  padding: 6px 12px;
+  border-radius: 8px;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.onClick_removeTag_structure_details:hover {
+  background: #ff7875;
 }
