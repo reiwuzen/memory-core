@@ -3,6 +3,19 @@
 version = 4
 
 [[package]]
+name = "Zensys"
+version = "0.5.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tokio",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5013,19 +5026,6 @@ dependencies = [
  "serde",
  "winnow 0.7.14",
  "zvariant",
-]
-
-[[package]]
-name = "zensys"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tokio",
 ]
 
 [[package]]
