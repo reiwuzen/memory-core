@@ -23,6 +23,27 @@ const Editor = () => {
     openMenuActions,
     blockActions
   } = useEditorZen();
+
+  function useOnTrue(x: boolean, fn: () => void) {
+  const prev = useRef(false);
+
+  useEffect(() => {
+    if (!prev.current && x) {
+      fn();
+    }
+    prev.current = x;
+  }, [x, fn]);
+}
+  useOnTrue(editable, () => {
+    const id = blocks.at(-1).id
+    if (!id) {
+      const el = blockRefs.current.get(blocks[0].id)
+      focusEnd(el)
+    }
+    const el = blockRefs.current.get(id)
+    focusEnd(el)
+  })
+
   const renderBlocks = useMemo(
     () =>
       blocks.map((b) => {
