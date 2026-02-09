@@ -1,7 +1,7 @@
 import { MemoryItem, MemoryNode } from "@/memory/schema";
 
 export type Memory = {
-  memoryItem: MemoryItem;
-  activeNode: MemoryNode;
-  nodes?: MemoryNode[];
+  memory_item: MemoryItem;
+  active_node: MemoryNode;
+  nodes: MemoryNode[];
 };
