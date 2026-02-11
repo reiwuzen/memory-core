@@ -62,15 +62,8 @@
         flex-wrap: wrap;
         display: flex;
         gap: 20px;
-      
-        // overflow-x: auto;
         overflow-y: auto;
-      
         scroll-behavior: smooth;
-      
-        padding-bottom: 8px;
-      
-        /* Optional subtle scrollbar */
         &::-webkit-scrollbar {
           width: 4px;
         }
@@ -80,9 +73,9 @@
           border-radius: 10px;
         }
         .card {
-          min-width: 260px;      /* Critical for horizontal scroll */
-          height: 140px;         /* Static height */
-          flex-shrink: 0;        /* Prevent shrinking */
+          min-width: 260px;      
+          height: 140px;        
+          flex-shrink: 0;       
         
           background: #181c22;
           padding: 16px;
@@ -110,21 +103,6 @@
     }
   }
 }
-
-/* ===== SEARCH BAR ===== */
-
-
-/* ===== SECTION LAYOUT ===== */
-
-
-
-/* ===== HORIZONTAL SCROLL ===== */
-
-
-/* ===== CARD ===== */
-
-
-/* ===== SKELETON ===== */
 
 .skeleton {
   background: linear-gradient(
@@ -172,14 +150,12 @@
   border-radius: 10px;
 }
 
-/* ===== FADE IN ===== */
 
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-/* ===== ERROR ===== */
 
 .error {
   display: flex;
