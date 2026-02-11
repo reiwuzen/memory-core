@@ -3,7 +3,13 @@ use chrono::{DateTime, Utc};
 pub struct MemoryItem {
     pub memory_id: String,
     pub created_at: DateTime<Utc>,
-    pub active_node_id: String,
+    pub head_node_id: String,
+    pub title: String,
+    pub memory_type: MemoryType,
+    
+    pub last_updated_at: String,
+    pub last_opened_at: String,
+    pub tags: Vec<Tag>
 }
 
 #[derive(serde::Serialize, serde::Deserialize,Clone,Debug)]
@@ -23,10 +29,7 @@ pub struct MemoryNode {
     pub created_at: DateTime<Utc>,
     // pub content_string: String,
     pub content_json: serde_json::Value,
-    pub title: String,
-    pub memory_type: MemoryType,
     pub change_reason: Option<String>,
-    pub tags: Vec<Tag>
 }
 
 
@@ -41,6 +44,6 @@ pub struct Tag {
 #[derive(serde::Serialize)]
 pub struct MemoryPayload {
     pub memory_item: MemoryItem,
-    pub active_node: MemoryNode,
+    pub head_node: MemoryNode,
     pub nodes: Vec<MemoryNode>,
 }

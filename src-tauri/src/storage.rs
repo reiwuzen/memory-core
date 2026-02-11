@@ -59,7 +59,7 @@ pub fn load_all_memories(app: AppHandle) -> Result<Vec<MemoryPayload>, String> {
 
         let nodes_dir = memory_dir.join("nodes");
         let mut nodes = Vec::new();
-        let mut active_node: Option<MemoryNode> = None;
+        let mut head_node: Option<MemoryNode> = None;
 
         if nodes_dir.exists() {
             let node_entries = std::fs::read_dir(&nodes_dir)
@@ -92,25 +92,25 @@ pub fn load_all_memories(app: AppHandle) -> Result<Vec<MemoryPayload>, String> {
                     ));
                 }
 
-                if node.node_id == memory_item.active_node_id {
-                    active_node = Some(node.clone());
+                if node.node_id == memory_item.head_node_id {
+                    head_node = Some(node.clone());
                 }
 
                 nodes.push(node);
             }
         }
 
-        let active_node = active_node.ok_or_else(|| {
+        let head_node = head_node.ok_or_else(|| {
             format!(
                 "Active node '{}' not found for memory '{}'",
-                memory_item.active_node_id, memory_item.memory_id
+                memory_item.head_node_id, memory_item.memory_id
             )
         })?;
 
         result.push(MemoryPayload {
             memory_item,
             nodes,
-            active_node,
+            head_node,
         });
     }
 
@@ -157,7 +157,7 @@ pub fn load_memory_payload(
     }
 
     let mut nodes = Vec::new();
-    let mut active_node: Option<MemoryNode> = None;
+    let mut head_node: Option<MemoryNode> = None;
 
     let node_entries = std::fs::read_dir(&nodes_dir)
         .map_err(|e| format!("Failed to read nodes dir {:?}: {}", nodes_dir, e))?;
@@ -189,24 +189,24 @@ pub fn load_memory_payload(
             ));
         }
 
-        if node.node_id == memory_item.active_node_id {
-            active_node = Some(node.clone());
+        if node.node_id == memory_item.head_node_id {
+            head_node = Some(node.clone());
         }
 
         nodes.push(node);
     }
 
-    let active_node = active_node.ok_or_else(|| {
+    let head_node = head_node.ok_or_else(|| {
         format!(
             "Active node '{}' not found for memory '{}'",
-            memory_item.active_node_id, memory_id
+            memory_item.head_node_id, memory_id
         )
     })?;
 
     Ok(MemoryPayload {
         memory_item,
         nodes,
-        active_node,
+        head_node,
     })
 }
 
@@ -250,7 +250,7 @@ pub fn set_active_node_id_of_memory_item(
         serde_json::from_str(&metadata_raw).map_err(|e| format!("Invalid metadata.json: {}", e))?;
 
     // 3. Mutate
-    metadata.active_node_id = node_id;
+    metadata.head_node_id = node_id;
 
     // 4. Persist (pretty + deterministic)
     let updated = serde_json::to_string_pretty(&metadata)
@@ -431,7 +431,6 @@ pub fn create_memory_item_with_initial_node(
 
     Ok(())
 }
-
 
 
 /// Adds a new node to an existing memory item.
@@ -618,50 +617,46 @@ pub fn add_new_node_to_existing_memory_item(
 
 
 #[command]
-pub fn upsert_tag_on_node(
+pub fn upsert_tag_on_memory_item(
     app: AppHandle,
     memory_id: String,
-    node_id: String,
     tag: Tag,
 ) -> Result<(), String> {
     use std::fs;
 
     let memory_spaces_dir = create_memory_spaces_dir(app)?;
-    let node_dir = memory_spaces_dir
-        .join(&memory_id)
-        .join("nodes")
-        .join(&node_id);
+    let memory_dir = memory_spaces_dir.join(&memory_id);
 
-    if !node_dir.is_dir() {
-        return Err(format!("Memory node '{}' does not exist", node_id));
+    if !memory_dir.is_dir() {
+        return Err(format!("Memory item '{}' does not exist", memory_id));
     }
 
-    let metadata_path = node_dir.join("metadata.json");
-    let tmp_metadata_path = node_dir.join("metadata.json.tmp");
+    let metadata_path = memory_dir.join("metadata.json");
+    let tmp_metadata_path = memory_dir.join("metadata.json.tmp");
 
     let raw = fs::read_to_string(&metadata_path)
-        .map_err(|e| format!("Failed to read node metadata: {}", e))?;
+        .map_err(|e| format!("Failed to read memory item metadata: {}", e))?;
 
-    let mut node: MemoryNode = serde_json::from_str(&raw)
-        .map_err(|e| format!("Failed to parse node metadata: {}", e))?;
+    let mut item: MemoryItem = serde_json::from_str(&raw)
+        .map_err(|e| format!("Failed to parse memory item metadata: {}", e))?;
 
-    match node.tags.iter_mut().find(|t| t.id == tag.id) {
+    match item.tags.iter_mut().find(|t| t.id == tag.id) {
         Some(existing) => {
-            *existing = tag; // update in place
+            *existing = tag; // update
         }
         None => {
-            node.tags.push(tag); // insert
+            item.tags.push(tag); // insert
         }
     }
 
-    let serialized = serde_json::to_string_pretty(&node)
-        .map_err(|e| format!("Failed to serialize node metadata: {}", e))?;
+    let serialized = serde_json::to_string_pretty(&item)
+        .map_err(|e| format!("Failed to serialize memory item metadata: {}", e))?;
 
     fs::write(&tmp_metadata_path, serialized)
-        .map_err(|e| format!("Failed to write temp metadata: {}", e))?;
+        .map_err(|e| format!("Failed to write temp memory item metadata: {}", e))?;
 
     fs::rename(&tmp_metadata_path, &metadata_path)
-        .map_err(|e| format!("Failed to atomically replace metadata: {}", e))?;
+        .map_err(|e| format!("Failed to atomically replace memory item metadata: {}", e))?;
 
     Ok(())
 }
@@ -669,50 +664,49 @@ pub fn upsert_tag_on_node(
 
 
 #[command]
-pub fn delete_tag_from_node(
+pub fn delete_tag_from_memory_item(
     app: AppHandle,
     memory_id: String,
-    node_id: String,
     tag_id: String,
 ) -> Result<(), String> {
     use std::fs;
 
     let memory_spaces_dir = create_memory_spaces_dir(app)?;
-    let node_dir = memory_spaces_dir
-        .join(&memory_id)
-        .join("nodes")
-        .join(&node_id);
+    let memory_dir = memory_spaces_dir.join(&memory_id);
 
-    if !node_dir.exists() {
-        return Err(format!("Memory node {} does not exist", node_id));
+    if !memory_dir.exists() {
+        return Err(format!("Memory item '{}' does not exist", memory_id));
     }
 
-    let node_json_path = node_dir.join("metadata.json");
-    let tmp_node_json_path = node_dir.join("metadata.tmp.json");
+    let metadata_path = memory_dir.join("metadata.json");
+    let tmp_metadata_path = memory_dir.join("metadata.json.tmp");
 
-    let raw = fs::read_to_string(&node_json_path)
-        .map_err(|e| format!("Failed to read metadata.json: {}", e))?;
+    let raw = fs::read_to_string(&metadata_path)
+        .map_err(|e| format!("Failed to read memory item metadata: {}", e))?;
 
-    let mut node: MemoryNode = serde_json::from_str(&raw)
-        .map_err(|e| format!("Failed to deserialize metadata.json: {}", e))?;
+    let mut item: MemoryItem = serde_json::from_str(&raw)
+        .map_err(|e| format!("Failed to deserialize memory item metadata: {}", e))?;
 
-    let before = node.tags.len();
+    let before = item.tags.len();
 
-    // 🔥 THIS is deletion
-    node.tags.retain(|t| t.id != tag_id);
+    // 🔥 deletion
+    item.tags.retain(|t| t.id != tag_id);
 
-    if node.tags.len() == before {
-        return Err(format!("Tag {} not found on node {}", tag_id, node_id));
+    if item.tags.len() == before {
+        return Err(format!(
+            "Tag '{}' not found on memory item '{}'",
+            tag_id, memory_id
+        ));
     }
 
-    let serialized = serde_json::to_string_pretty(&node)
-        .map_err(|e| format!("Failed to serialize node: {}", e))?;
+    let serialized = serde_json::to_string_pretty(&item)
+        .map_err(|e| format!("Failed to serialize memory item metadata: {}", e))?;
 
-    fs::write(&tmp_node_json_path, serialized)
-        .map_err(|e| format!("Failed to write temp metadata: {}", e))?;
+    fs::write(&tmp_metadata_path, serialized)
+        .map_err(|e| format!("Failed to write temp memory item metadata: {}", e))?;
 
-    fs::rename(&tmp_node_json_path, &node_json_path)
-        .map_err(|e| format!("Failed to replace metadata.json: {}", e))?;
+    fs::rename(&tmp_metadata_path, &metadata_path)
+        .map_err(|e| format!("Failed to atomically replace memory item metadata: {}", e))?;
 
     Ok(())
 }
@@ -782,7 +776,7 @@ pub fn get_memory_item_active_node_nodes(
     }
 
     let mut nodes: Vec<MemoryNode> = Vec::new();
-    let mut active_node: Option<MemoryNode> = None;
+    let mut head_node: Option<MemoryNode> = None;
 
     for entry in fs::read_dir(&nodes_dir)
         .map_err(|e| format!("failed to read nodes dir: {e}"))?
@@ -811,17 +805,17 @@ pub fn get_memory_item_active_node_nodes(
         let node: MemoryNode = serde_json::from_str(&node_str)
             .map_err(|e| format!("failed to parse MemoryNode: {e}"))?;
 
-        if node_id == memory_item.active_node_id {
-            active_node = Some(node.clone());
+        if node_id == memory_item.head_node_id {
+            head_node = Some(node.clone());
         }
 
         nodes.push(node);
     }
 
-    let active_node = active_node
-        .ok_or("active_node_id does not match any node directory")?;
-    // println!("{:#?}",active_node);
+    let head_node = head_node
+        .ok_or("head_node_id does not match any node directory")?;
+    // println!("{:#?}",head_node);
 
-    Ok(MemoryPayload { memory_item, active_node, nodes })
+    Ok(MemoryPayload { memory_item, head_node, nodes })
 }
 

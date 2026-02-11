@@ -4,7 +4,14 @@ export type MemoryType = "Diary" | "Fact" | "Event" | "Schedule" | "Generic";
 export type MemoryItem = {
   memory_id: string;
   created_at: string;
-  active_node_id: string;
+  title: string
+  head_node_id: string
+
+  last_updated_at:string
+  last_opened_at: string
+  // active_node_id: string;
+  memory_type: MemoryType
+  tags: Tag[]
 };
 
 
@@ -16,9 +23,7 @@ export type MemoryNode = {
   created_at: string
   // content_string: string
   content_json: string
-  title: string
-  memory_type: MemoryType
+  // title: string
   change_reason?: string
-  tags: Tag[]
 }
 
