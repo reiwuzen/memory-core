@@ -4,6 +4,14 @@ import { create } from "zustand";
 import { DEFAULT_SETTINGS as DS } from "@/constants/settings";
 
 export const useSettingsStore = create<StoreState>((set)=>({
+    isOpen: false,
+    setIsOpen: (isOpen) => set({
+        isOpen: isOpen
+    }),
+view: 'general',
+setView:(s)=> set({
+    view:s
+}),
     theme: DS.theme,
     setTheme: (t)=> set({
         theme:t

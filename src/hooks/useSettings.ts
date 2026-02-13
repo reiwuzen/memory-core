@@ -5,6 +5,8 @@ export const useSettings = () => {
   const { clearData } = SettingsService();
 
   const {
+    isOpen,
+    view,
     theme,
     localOnlyMode,
     memoryView,
@@ -16,6 +18,8 @@ export const useSettings = () => {
     setLocalOnlyMode,
     setMemoryView,
     setTheme,
+    setView,
+    setIsOpen,
   } = useSettingsStore();
 
   const settingsData = {
@@ -26,7 +30,28 @@ export const useSettings = () => {
     analytics,
   };
 
+  const settingsView = {
+    isOpen:  {
+      state: isOpen,
+      actions: {
+      enable: () => setIsOpen(true),
+      disable: () => setIsOpen(false)
+      }}
+    ,
+    
+    view : {
+      state: view,
+      actions: {
+        general:() => setView('general'),
+        advanced: () => setView('advanced'),
+        privacy: () => setView('privacy')
+        , intelligence: () => setView('intelligence'),
+        memory: () => setView('memory')
+      }
+    }
+  }
   const settingsAction = {
+
     theme: {
       preset: {
         dark: () => setTheme("dark"),
@@ -69,6 +94,7 @@ export const useSettings = () => {
 
   return {
     settingsData,
+    settingsView,
     settingsAction,
     clearData,
   };

@@ -3,7 +3,7 @@
   position: fixed;
   top: 20px;
   left: 20px;
-  z-index: 10000;
+  z-index: 500;
 
   width: 42px;
   height: 42px;
@@ -36,7 +36,7 @@
       opacity: 0;
     }
     span:nth-child(3) {
-      transform: rotate(-45deg) translateY(-5.2px) translateX(4.5px);
+      transform: rotate(-45deg) translateY(-5.2px) translateX(5px);
     }
   }
 }
@@ -47,7 +47,7 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
-  z-index: 9998;
+  z-index: 498;
 }
 
 /* Navbar */
@@ -61,7 +61,7 @@ nav#navbar {
   top: 50%;
   left: 0;
 
-  z-index: 9999;
+  z-index: 499;
   border-radius: 0px 10px 10px 0;
   padding: 20px 0 20px 0px;
   display: flex;

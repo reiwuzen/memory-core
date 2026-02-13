@@ -2,10 +2,12 @@ import { useState } from "react";
 import "./navbar.scss";
 import { useActiveTab } from "@/hooks/useActiveTab";
 import { TabType, TabView } from "@/types/tab";
+import { useSettings } from "@/hooks/useSettings";
 
 const Navbar = () => {
   const { activeTab, setActiveTabTypeAndView } = useActiveTab();
   const [isOpen, setIsOpen] = useState(false);
+  const {settingsView} = useSettings();
 
   const handleClick =<T extends TabType> (type: T, view: TabView<T>) => {
     setActiveTabTypeAndView(type, view);
@@ -67,8 +69,8 @@ const Navbar = () => {
           </li>
 
           <li
-            className={activeTab?.type === "settings" ? "active" : ""}
-            onClick={() => handleClick("settings", "general")}
+            // className={activeTab?.type === "settings" ? "active" : ""}
+            onClick={() => {settingsView.isOpen.actions.enable();setIsOpen(false)}}
           >
             <h6>Settings</h6>
           </li>

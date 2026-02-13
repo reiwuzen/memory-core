@@ -35,11 +35,11 @@ export type TabViewMap = {
   memory_space: "list" | "detail";
   create: "picker" | "form";
   structure: 'add' | 'list' | 'details';
-  settings: | "general"
-  | "memory"
-  | "privacy"
-  | "intelligence"
-  | "advanced";
+  // settings: | "general"
+  // | "memory"
+  // | "privacy"
+  // | "intelligence"
+  // | "advanced";
 };
 
 

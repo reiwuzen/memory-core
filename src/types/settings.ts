@@ -1,8 +1,13 @@
 export type Theme ='light' | 'dark' | 'blueGrey' | 'system' | 'custom'
 export type MemoryView= 'timeline' | 'tree' | 'list'
-
+type SettingsView = 'general' | 'memory' | 'privacy' | 'intelligence' | 'advanced'
 
 export type StoreState = {
+  isOpen: boolean,
+  setIsOpen: (isOpen: boolean) => void
+
+  view: SettingsView,
+  setView: (s: SettingsView)=>void
     theme: Theme
     setTheme: (t: Theme) => void
 
