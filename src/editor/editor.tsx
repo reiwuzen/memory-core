@@ -6,7 +6,7 @@ import { AnyBlock, Block } from "@/types/editor";
 import { widenBlock } from "@/helper/widenBlock";
 import BlockMenu from "./blockMenu";
 import BlockEditor from "./blockEditor/blockEditor";
-// import { toast } from "sonner";
+import React from "react";
 
 const Editor = () => {
   const blockMenuRef = useRef<HTMLDivElement>(null);
@@ -160,37 +160,36 @@ const Editor = () => {
   return (
     <div className="editor">
       {/* <div className="editable-content"> */}
-        {renderBlocks.map(({ block, initialText }) => (
-          <>
-            <BlockEditor
-              key={block.id}
-              initialText={initialText}
-              pendingFocusId={pendingFocusId}
-              block={block}
-              handleInput={handleInput}
-              handleKeydown={handleKeyDown}
-              hydratedBlocks={hydratedBlocks}
-              blockRefs={blockRefs}
+      {renderBlocks.map(({ block, initialText }) => (
+        <React.Fragment key={block.id}>
+          <BlockEditor
+            initialText={initialText}
+            pendingFocusId={pendingFocusId}
+            block={block}
+            handleInput={handleInput}
+            handleKeydown={handleKeyDown}
+            hydratedBlocks={hydratedBlocks}
+            blockRefs={blockRefs}
+          />
+          {openMenu?.blockId === block.id && (
+            <BlockMenu
+              blockMenuRef={blockMenuRef}
+              block={widenBlock(block)}
+              mode={openMenu.mode}
+              onClose={() => openMenuActions.setToNull()}
+              onAddBlock={(type) => {
+                pendingFocusId.current = blockActions.insertBlockAfter(
+                  block.id,
+                  type,
+                );
+              }}
+              onChangeBlockType={(b) => {
+                pendingFocusId.current = b.id;
+              }}
             />
-            {openMenu?.blockId === block.id && (
-              <BlockMenu
-                blockMenuRef={blockMenuRef}
-                block={widenBlock(block)}
-                mode={openMenu.mode}
-                onClose={() => openMenuActions.setToNull()}
-                onAddBlock={(type) => {
-                  pendingFocusId.current = blockActions.insertBlockAfter(
-                    block.id,
-                    type,
-                  );
-                }}
-                onChangeBlockType={(b) => {
-                  pendingFocusId.current = b.id;
-                }}
-              />
-            )}
-          </>
-        ))}
+          )}
+        </React.Fragment>
+      ))}
       {/* </div> */}
     </div>
   );
