@@ -604,7 +604,7 @@ pub fn create_new_snapshot_of_page(
 pub fn upsert_tag_on_page(
     app: AppHandle,
     page_id: String,
-    tag: Tag,
+    tag_id: String,
 ) -> Result<(), String> {
     use std::fs;
 
@@ -624,13 +624,9 @@ pub fn upsert_tag_on_page(
     let mut page_meta: PageMeta = serde_json::from_str(&raw)
         .map_err(|e| format!("Failed to parse page metadata: {}", e))?;
 
-    match page_meta.tags.iter_mut().find(|t| t.id == tag.id) {
-        Some(existing) => {
-            *existing = tag; // update
-        }
-        None => {
-            page_meta.tags.push(tag); // insert
-        }
+    // Only store tag IDs on the page
+    if !page_meta.tags.contains(&tag_id) {
+        page_meta.tags.push(tag_id);
     }
 
     let serialized = serde_json::to_string_pretty(&page_meta)
@@ -656,8 +652,8 @@ pub fn delete_tag_from_page(
     let page_store_dir = page_store_dir(app)?;
     let page_dir = page_store_dir.join(&page_id);
 
-    if !page_dir.exists() {
-        return Err(format!("Memory item '{}' does not exist", page_id));
+    if !page_dir.is_dir() {
+        return Err(format!("Page '{}' does not exist", page_id));
     }
 
     let page_json_path = page_dir.join("page.json");
@@ -666,22 +662,22 @@ pub fn delete_tag_from_page(
     let raw = fs::read_to_string(&page_json_path)
         .map_err(|e| format!("Failed to read page metadata: {}", e))?;
 
-    let mut item: MemoryItem = serde_json::from_str(&raw)
+    let mut page_meta: PageMeta = serde_json::from_str(&raw)
         .map_err(|e| format!("Failed to deserialize page metadata: {}", e))?;
 
-    let before = item.tags.len();
+    let before = page_meta.tags.len();
 
-    // 🔥 deletion
-    item.tags.retain(|t| t.id != tag_id);
+    // Delete tag by ID
+    page_meta.tags.retain(|t| t != &tag_id);
 
-    if item.tags.len() == before {
+    if page_meta.tags.len() == before {
         return Err(format!(
             "Tag '{}' not found on page '{}'",
             tag_id, page_id
         ));
     }
 
-    let serialized = serde_json::to_string_pretty(&item)
+    let serialized = serde_json::to_string_pretty(&page_meta)
         .map_err(|e| format!("Failed to serialize page metadata: {}", e))?;
 
     fs::write(&page_json_tmp_path, serialized)
