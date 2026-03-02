@@ -7,9 +7,10 @@ export const useLibrary = () => {
     createPage,
     createNewSnapshotOfPage,
     deletePage,
-    update_last_opened_at_MetadataOfMemoryItem,
     loadPages,
     reloadPage,
+    upsertTagOnPage,
+    deleteTagFromPage
   } = PageService();
   const pagesStore = useMemo(() => {
     return {
@@ -23,13 +24,18 @@ export const useLibrary = () => {
       clear: () => setActivePage(null),
       set: setActivePage,
       reload: reloadPage,
+
     },
 
     page: {
       create: createPage,
       createNewSnapshot: createNewSnapshotOfPage,
       delete: deletePage,
-      updateLastOpened: update_last_opened_at_MetadataOfMemoryItem,
+      addTag: (pageId:string,tagId:string)=>{
+        return upsertTagOnPage(pageId,tagId)},
+      removeTag: (pageId:string,tagId:string) => {
+        return deleteTagFromPage(pageId,tagId)
+      }
     },
     pages: {
       load: async () => {
