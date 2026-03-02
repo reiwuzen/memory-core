@@ -11,7 +11,7 @@ const Navbar = () => {
 
   const handleClick =<T extends TabType> (type: T, view: TabView<T>) => {
     setActiveTabTypeAndView(type, view);
-    setIsOpen(false); // auto-close on selection (clean UX)
+    setIsOpen(false);
   };
 
   return (
@@ -67,9 +67,14 @@ const Navbar = () => {
           >
             <h6>Structure</h6>
           </li>
+          <li
+            className={activeTab?.type === 'calender' ? 'active' : ''}
+            onClick={() => handleClick('calender','calender')}
+          >
+            <h6>Calender</h6>
+          </li>
 
           <li
-            // className={activeTab?.type === "settings" ? "active" : ""}
             onClick={() => {settingsView.isOpen.actions.enable();setIsOpen(false)}}
           >
             <h6>Settings</h6>
