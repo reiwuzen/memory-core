@@ -1,4 +1,4 @@
-import { Result } from "@/types/result";
+import { Result } from "@reiwuzen/result";
 import { invoke } from "@tauri-apps/api/core";
 
 export const SettingsService = () => {
@@ -9,14 +9,10 @@ export const SettingsService = () => {
   const clearData = async (): Promise<Result<never, string>> => {
     try {
       await invoke<void>("clear_data");
-      return {
-        ok: true,
-      };
+      return Result.Ok(undefined as never)
+      
     } catch (err) {
-      return {
-        ok: false,
-        error: String(err),
-      };
+      return Result.Err(err)
     }
   };
   return {
