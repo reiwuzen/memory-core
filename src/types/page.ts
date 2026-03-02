@@ -1,14 +1,13 @@
 import { Snapshot } from "./snapshot"
-import { Tag } from "./tag"
 
 export type PageType = | 'diary' | 'fact' | 'event' | 'generic'
 export type PageMeta = {
-    id: string
+    readonly id: string
     type: PageType
     headSnapshotId: string 
     title: string
-    createdAt: string
-    tags: Tag[]
+    readonly createdAt: string
+    tags: string[]
     bookId: string
     parentPageId: string
     lastOpenedAt: string

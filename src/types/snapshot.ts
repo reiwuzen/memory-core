@@ -1,10 +1,8 @@
 export type Snapshot = {
-  id: string;
-  pageId: string
+  readonly id: string;
+  readonly pageId: string
   parentSnapshotId: string;
   contentJson: string;
-  createdAt: string;
+  readonly createdAt: string;
   comment?: string;
 };
-
-// export type Snapshots = Snapshot[];
