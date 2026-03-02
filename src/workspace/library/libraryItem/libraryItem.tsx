@@ -1,58 +1,90 @@
 import { useActiveTab } from "@/hooks/useActiveTab";
 import "./libraryItem.scss";
+import "../../../../../../../local/blocky-react/src/styles.css";
 import { useTags } from "@/hooks/useTag";
-import { useEffect, useRef, useState } from "react";
-import Editor from "@/editor/editor";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Editor } from "../../../../../../../local/blocky-react/src/editor";
+import { AnyBlock } from "@reiwuzen/blocky";
 import { toast } from "sonner";
-import { useEditorZen } from "@/hooks/useEditorZen";
-import { AnyBlock, Block } from "@/types/editor";
+
 import { useLibrary } from "@/hooks/useLibrary";
-import { areBlocksSemanticallyEqual } from "@/helper/compareTwoBlocks";
-import { widenBlocks } from "@/helper/widenBlock";
+// import { areBlocksSemanticallyEqual } from "@/helper/compareTwoBlocks";
 
 const LibraryItem = () => {
-  const { pagesStore,pageActions } = useLibrary();
+  const { pagesStore, pageActions } = useLibrary();
   const { setActiveTabView } = useActiveTab();
-  const { tagsData, addTagToNode } = useTags();
+  const { tagsData } = useTags();
   const { headSnapshot, pageMeta } = pagesStore.activePage;
   const [showTagPicker, setShowTagPicker] = useState<boolean>(false);
-  const { blocks, editable, editableActions, blockActions } = useEditorZen();
+  const [blocks, setBlocks] = useState<AnyBlock[]>();
+  const [editable, setEditable] = useState<boolean>(false);
+
+  const addTagBtnRef = useRef<HTMLButtonElement>(null);
   const tagPickerRef = useRef<HTMLDivElement>(null);
 
-  const nodeTagIds = new Set(pageMeta.tags.map((t) => t.id));
+  const pageTagIds = useMemo(() => new Set(pageMeta.tags), [pageMeta.tags]);
 
-  const availableTags = tagsData.tags.filter((tag) => !nodeTagIds.has(tag.id));
+  const assignedTags = useMemo(
+    () => tagsData.tags.filter((tag) => pageTagIds.has(tag.id)),
+    [tagsData.tags, pageTagIds],
+  );
+
+  const unassignedTags = useMemo(
+    () => tagsData.tags.filter((tag) => !pageTagIds.has(tag.id)),
+    [tagsData.tags, pageTagIds],
+  );
+
+  const saveResolverRef = useRef<{
+    resolve: () => void;
+    reject: (e: unknown) => void;
+  } | null>(null);
 
   useEffect(() => {
-    const b: Block[] = JSON.parse(headSnapshot.contentJson);
-    blockActions.set(b);
     const handleTagPicker = (e: MouseEvent) => {
       if (
         tagPickerRef.current &&
         !tagPickerRef.current.contains(e.target as Node)
+        && !addTagBtnRef.current.contains(e.target as Node)
       )
         setShowTagPicker(false);
     };
+    
     document.addEventListener("mousedown", handleTagPicker);
     return () => {
-      editableActions.disable();
+      setEditable(false);
       document.removeEventListener("mousedown", handleTagPicker);
     };
-  }, []);
+  }, [showTagPicker]);
+  useEffect(() => {
+  const b: AnyBlock[] = JSON.parse(headSnapshot.contentJson);
+  setBlocks(b);
+}, [headSnapshot.contentJson]);
 
-  const saveNode = async () => {
-    await pageActions.page.createNewSnapshot(
-      pagesStore.activePage.pageMeta
-      ,
-      JSON.stringify(blocks),
-    );
+  const handleSave = async (freshBlocks: AnyBlock[]) => {
+    setBlocks(freshBlocks);
+    try {
+      await pageActions.page.createNewSnapshot(
+        pagesStore.activePage.pageMeta,
+        JSON.stringify(freshBlocks),
+      );
+      await pageActions.activePage.reload(headSnapshot.pageId);
+      saveResolverRef.current?.resolve();
+    } catch (e) {
+      saveResolverRef.current?.reject(e);
+    } finally {
+      saveResolverRef.current = null;
+    }
+  };
 
-    await pageActions.activePage.reload(headSnapshot.pageId);
-    editableActions.disable();
+  const saveSnapshot = () => {
+    return new Promise<void>((resolve, reject) => {
+      saveResolverRef.current = { resolve, reject };
+      setEditable(false); // triggers onChange → handleSave
+    });
   };
 
   const deleteAndExit = async () => {
-    const res = await pageActions.page.delete(headSnapshot.pageId)
+    const res = await pageActions.page.delete(headSnapshot.pageId);
 
     if (res.ok !== true) {
       throw new Error(res.error ?? "Failed to delete memory Item");
@@ -71,7 +103,7 @@ const LibraryItem = () => {
             onClick={(e) => {
               e.stopPropagation();
               // e.preventDefault();
-              editableActions.enable();
+              setEditable(true);
             }}
           >
             <svg
@@ -91,21 +123,21 @@ const LibraryItem = () => {
           <button
             className="page-snapshot-save-btn"
             onClick={async () => {
-              const oldBlocks: AnyBlock[] = JSON.parse(
-                headSnapshot.contentJson,
-              );
-              const bool = areBlocksSemanticallyEqual(
-                oldBlocks,
-                widenBlocks(blocks),
-              );
-              if (bool) {
-                editableActions.disable();
-                toast.warning(
-                  "The content is still same, please change something",
-                );
-                return;
-              }
-              toast.promise(saveNode(), {
+              // const oldBlocks: AnyBlock[] = JSON.parse(
+              //   headSnapshot.contentJson,
+              // );
+              // const bool = areBlocksSemanticallyEqual(
+              //   oldBlocks,
+              //   blocks,
+              // );
+              // if (bool) {
+              //   setEditable(false);
+              //   toast.warning(
+              //     "The content is still same, please change something",
+              //   );
+              //   return;
+              // }
+              toast.promise(saveSnapshot(), {
                 loading: "Saving node",
                 success: "Node saved successfully",
                 error: (err) => `Failed to save: ${err}`,
@@ -157,41 +189,45 @@ const LibraryItem = () => {
           </svg>
         </button>
         <button
+        ref={addTagBtnRef}
           className="page-snapshot-add_tag-btn"
           onClick={async (e) => {
             e.stopPropagation();
-            setShowTagPicker(true);
+            setShowTagPicker(p=>!p);
             // const ok = await addTagToNode(headNode.memory_id,headNode.node_id,)
           }}
         >
           Add Tag
         </button>
-        {showTagPicker && (
+        {!!showTagPicker && (
           <div ref={tagPickerRef} className="tag-picker">
             <div className="tag-picker__header">
               <span>Tags</span>
             </div>
 
             <ul className="tag-picker__list">
-              {availableTags.length === 0 && (
+              {unassignedTags.length === 0 && (
                 <li className="tag-picker__empty">No tags found</li>
               )}
 
-              {availableTags.map((t) => (
+              {unassignedTags.map((t) => (
                 <li
                   key={t.id}
                   className="tag-picker__item"
-                  onClick={() => {
-                    const ok = addTagToNode(
-                      headSnapshot.pageId,
-                      headSnapshot.id,
-                      t,
+                  onClick={async () => {
+                    await (
+                      await pageActions.page.addTag(
+                        pagesStore.activePage.pageMeta.id,
+                        t.id,
+                      )
+                    ).match(
+                      () => {},
+                      (error) => console.log(`[TagNotAdded]: ${error}`),
                     );
-                    if (!ok) {
-                      //toast
-                    }
                     setShowTagPicker(false);
-                    pageActions.activePage.reload(headSnapshot.pageId);
+                    (
+                      await pageActions.activePage.reload(headSnapshot.pageId)
+                    ).inspectErr((e) => console.log("[reload] err: ", e));
                   }}
                 >
                   {t.label}
@@ -210,8 +246,8 @@ const LibraryItem = () => {
         </time>
       </header>
       <ul className="page-snapshot__tags">
-        {pageMeta.tags.length > 0 ? (
-          pageMeta.tags.map((t) => (
+        {assignedTags.length > 0 ? (
+          assignedTags.map((t) => (
             <li className="tag" key={t.id}>
               {t.label}
             </li>
@@ -224,7 +260,14 @@ const LibraryItem = () => {
         className="page-snapshot__content"
         // onClick={()=>{}}
       >
-        <Editor />
+        {blocks && (
+          <Editor
+            key={headSnapshot.id}
+            initialBlocks={blocks}
+            onChange={handleSave}
+            editable={editable}
+          />
+        )}
       </section>
     </article>
   );
