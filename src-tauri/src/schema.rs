@@ -9,7 +9,7 @@ pub struct PageMeta {
     pub head_snapshot_id: String,
     pub title: String,
     pub created_at: DateTime<Utc>,
-    pub tags: Vec<Tag>,
+    pub tags: Vec<String>,
     pub book_id: Option<String>,
     pub parent_page_id: Option<String>,
     pub last_opened_at: DateTime<Utc>,
