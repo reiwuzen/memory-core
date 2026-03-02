@@ -1,11 +1,10 @@
 import { v7 } from "uuid";
-import { MemoryItem } from "@/memory/schema";
 import { invoke } from "@tauri-apps/api/core";
-import { createBlock } from "@/helper/createBlock";
-import { Result } from "@/types/result";
+import { createBlock } from "@reiwuzen/blocky";
+import { Result } from "@reiwuzen/result";
 import { PageMeta, VersionedPage, PageType } from "@/types/page";
 import { Snapshot } from "@/types/snapshot";
-// import { Memory } from "@/types/memory";
+import { DEFAULT_PARAGRAPH_BLOCK } from "@/constants/content";
 export const PageService = () => {
   const createPage = async (
     title: string,
@@ -21,7 +20,7 @@ export const PageService = () => {
       type: type,
       bookId: null,
       parentPageId: null,
-      lastOpenedAt:new Date().toISOString(),
+      lastOpenedAt: new Date().toISOString(),
       lastUpdatedAt: new Date().toISOString(),
       tags: [],
     };
@@ -30,7 +29,10 @@ export const PageService = () => {
       id: snapshotId,
       createdAt: new Date().toISOString(),
       pageId,
-      contentJson: JSON.stringify([createBlock("paragraph")]),
+      contentJson: JSON.stringify([createBlock("paragraph").match(
+        b=>b,
+        ()=>DEFAULT_PARAGRAPH_BLOCK
+      )]),
     };
 
     try {
@@ -38,15 +40,9 @@ export const PageService = () => {
         pageMeta: pageMeta,
         snapshot: snapshot,
       });
-      return {
-        ok: true,
-        value: pageMeta,
-      };
+      return Result.Ok(pageMeta);
     } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
+      return Result.Err(error);
     }
   };
   const createNewSnapshotOfPage = async (
@@ -56,10 +52,10 @@ export const PageService = () => {
     const newSnapshotId = v7();
 
     const updatedPageMeta = {
-  ...pageMeta,
-  headSnapshotId: newSnapshotId,
-  lastUpdatedAt: new Date().toISOString(),
-};
+      ...pageMeta,
+      headSnapshotId: newSnapshotId,
+      lastUpdatedAt: new Date().toISOString(),
+    };
     const snapshot: Snapshot = {
       pageId: pageMeta.id,
       id: newSnapshotId,
@@ -67,102 +63,81 @@ export const PageService = () => {
       contentJson,
       parentSnapshotId: null,
     };
-   
-    
+
     try {
       await invoke("create_new_snapshot_of_page", {
         pageMeta: updatedPageMeta,
         snapshot: snapshot,
       });
-      return {
-        ok: true,
-        value: [pageMeta, snapshot],
-      };
+      return Result.Ok([pageMeta, snapshot]);
     } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
+      return Result.Err(error);
     }
   };
 
-  const deletePage = async (
-    pageId: string,
-  ): Promise<Result<never, string>> => {
+  const deletePage = async (pageId: string): Promise<Result<never, string>> => {
     try {
       await invoke("delete_page", { pageId });
       // console.log("delete is called and tried")
-      return {
-        ok: true,
-      };
     } catch (err) {
       // console.log("delete is called and cathced err", err)
-      return {
-        ok: false,
-        error: String(err),
-      };
+      return Result.Err(err);
     }
   };
-
 
   const loadPages = async (): Promise<Result<VersionedPage[], string>> => {
-      try {
-        const value = await invoke<VersionedPage[]>("load_all_pages");
-        return {
-          ok: true,
-          value,
-        };
-      } catch (error) {
-        return {
-          ok: false,
-          error,
-        };
-      }
-    };
-    const reloadPage = async (id: string) : Promise<Result<VersionedPage,string>>=>{
-      try{
-          const value = await invoke<VersionedPage>("load_page_details",{
-              memoryId:id
-          })
-          return{
-              ok:true,
-              value
-          }
-      }catch(error){
-          return{
-              ok:false,
-              error
-          }
-      }
-    } 
-
-
-  
-  const update_last_opened_at_MetadataOfMemoryItem = async (
-    memoryItem: MemoryItem,
-  ): Promise<Result> => {
     try {
-      memoryItem.last_opened_at = new Date().toISOString();
-      await invoke("update_memory_item_metadata", {
-        memoryItem: memoryItem,
-      });
-      console.log("setting new time to: ", new Date().toISOString());
-      return {
-        ok: true,
-      };
+      const value = await invoke<VersionedPage[]>("load_all_pages");
+      return Result.Ok(value);
     } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
+      return Result.Err(error);
     }
   };
+  const reloadPage = async (id: string): Promise<Result<VersionedPage>> => {
+    try {
+      const value = await invoke<VersionedPage>("load_page_details", {
+        pageId: id,
+      });
+      return Result.Ok(value);
+    } catch (error) {
+      return Result.Err(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const upsertTagOnPage = async (
+    pageId: string,
+    tagId: string,
+  ): Promise<Result<never>> => {
+    try {
+      await invoke("upsert_tag_on_page", {
+        pageId: pageId,
+        tagId: tagId,
+      });
+    } catch (err) {
+      return Result.Err(err);
+    }
+  };
+
+  const deleteTagFromPage= async (pageId:string,tagId:string):Promise<Result<never>> => {
+    try {
+      await invoke('delete_tag_from_page',{
+        pageId:pageId,
+        tagId:tagId
+      })
+    } catch (error) {
+      return Result.Err(error)
+    }
+  }
+
+  
   return {
     createPage,
     createNewSnapshotOfPage,
     deletePage,
-    update_last_opened_at_MetadataOfMemoryItem,
+    upsertTagOnPage,
+    deleteTagFromPage,
+    
     loadPages,
-    reloadPage
+    reloadPage,
   };
 };
