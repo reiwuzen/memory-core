@@ -2,9 +2,8 @@ use tauri::{AppHandle, command};
 use crate::utils::get_app_dir;
 use std::{fs, path::Path};
 #[command]
-
 pub fn clear_data(app: AppHandle) -> Result<(), String> {
-    let app_data_dir = get_app_dir(app)
+    let app_data_dir = get_app_dir(&app)
         .map_err(|e| format!("Failed to resolve app data directory: {}", e))?;
 
     let path = Path::new(&app_data_dir);
