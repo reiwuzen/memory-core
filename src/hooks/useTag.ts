@@ -8,12 +8,9 @@ export const useTags = () => {
 
   const loadTags = useCallback(async () => {
     try {
-        console.log("Loading tags...")
       setLoading(true);
       const data = await invoke<Tag[]>("load_all_tags");
-      console.log("Tags data:", data);
       setTags(data);
-      console.log("Tags loaded")
     } catch (e) {
       setError(e);
     } finally {
