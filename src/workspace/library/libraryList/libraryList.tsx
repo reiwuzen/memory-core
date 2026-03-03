@@ -16,7 +16,7 @@ const LibraryList = () => {
   })
   return (
     <div className="library-list">
-      <h1>Memory Space</h1>
+      <h1>Library</h1>
 
       <div className="library-list-items">
         {pagesStore.pages.map(({ pageMeta, headSnapshot, snapshots }) => (
