@@ -10,19 +10,136 @@ use tauri::{
     AppHandle,
 };
 
-/// fn to create page_store directory
+/// Creates or ensures the existence of the page store directory.
 ///
-/// `returns` page_store PathBuf
+/// # Overview
+///
+/// `page_store_dir` is a utility function that initializes the application's
+/// page storage directory. If the directory does not exist, it is created.
+/// The function is idempotent and safe to call multiple times.
+///
+/// # Directory Structure
+///
+/// The page store is organized as follows:
+///
+/// ```text
+/// {app_data_dir}/
+/// └─ page_store/
+///    ├─ {page_id_1}/
+///    │  ├─ page.json
+///    │  └─ snapshots/
+///    ├─ {page_id_2}/
+///    │  ├─ page.json
+///    │  └─ snapshots/
+///    └─ .staging/
+///       └─ (temporary staging directories)
+/// ```
+///
+/// # Parameters
+///
+/// - `app`: Tauri application handle used to resolve the application data directory.
+///
+/// # Returns
+///
+/// - `Ok(PathBuf)` containing the path to the page store directory.
+/// - `Err(String)` if the application directory cannot be resolved or if
+///   directory creation fails.
+///
+/// # Errors
+///
+/// Errors may occur if:
+/// - The application handle is invalid or not properly initialized.
+/// - The filesystem is read-only or inaccessible.
+/// - Permission issues prevent directory creation.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let page_store = page_store_dir(app)?;
+/// println!("Page store location: {:?}", page_store);
+/// ```
 #[command]
 pub fn page_store_dir(app: AppHandle) -> Result<PathBuf, String> {
-    let app_dir = get_app_dir(app)?;
+    let app_dir = get_app_dir(&app)?;
     let page_store_dir = app_dir.join("page_store");
     std::fs::create_dir_all(&page_store_dir)
         .map_err(|err| format!("Can not create page_store_dir: {}", err))?;
     Ok(page_store_dir)
 }
 
-/// Load all the pages
+/// Loads all pages stored in the page store directory.
+///
+/// # Overview
+///
+/// `load_all_pages` is a bulk read operation that loads all `VersionedPage`
+/// instances from disk. Each page includes its metadata and all associated
+/// snapshots. The function scans the page store directory and deserializes
+/// each page's configuration file.
+///
+/// # Discovery & Loading Logic
+///
+/// - Scans `page_store/` for top-level directories.
+/// - For each directory, attempts to load `page.json` as page metadata.
+/// - Orphaned directories (missing `page.json`) are silently skipped.
+/// - For each page, loads all snapshots from the `snapshots/` subdirectory.
+/// - Returns only fully valid pages; partially corrupted pages are skipped.
+///
+/// # File Structure
+///
+/// ```text
+/// page_store/
+/// ├─ page_id_1/
+/// │  ├─ page.json                    <- Page metadata
+/// │  └─ snapshots/
+/// │     ├─ snapshot_id_1/
+/// │     │  ├─ metadata.json
+/// │     │  └─ content.json
+/// │     └─ snapshot_id_2/
+/// │        ├─ metadata.json
+/// │        └─ content.json
+/// └─ page_id_2/
+///    └─ ...
+/// ```
+///
+/// # Invariants
+///
+/// - The function performs integrity checks: each snapshot's `page_id`
+///   must match its parent page's `id`.
+/// - Each page must have a `head_snapshot` identified by `head_snapshot_id`.
+/// - If the head snapshot is missing, the entire page is treated as invalid
+///   and an error is returned.
+///
+/// # Return Behavior
+///
+/// - `Ok(Vec<VersionedPage>)`: A list of all valid pages, each with full
+///   snapshot history.
+/// - `Err(String)`: If any invariant violation or filesystem error occurs.
+///
+/// # Errors
+///
+/// Errors include:
+/// - The page store directory cannot be read.
+/// - A `page.json` file is malformed or unreadable.
+/// - Snapshot metadata is invalid or corrupt.
+/// - The head snapshot referenced by a page does not exist.
+/// - Memory ID mismatches between snapshots and their parent page.
+///
+/// # Performance Notes
+///
+/// - This is a **full scan** operation; time complexity is O(P × S), where
+///   P is the number of pages and S is the average number of snapshots per page.
+/// - For large page stores with many snapshots, consider using
+///   [`load_page_details`] to load individual pages on demand.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let all_pages = load_all_pages(app)?;
+/// println!("Loaded {} pages", all_pages.len());
+/// for page in all_pages {
+///     println!("Page: {} with {} snapshots", page.page_meta.id, page.snapshots.len());
+/// }
+/// ```
 #[command]
 pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
     let page_store_dir = page_store_dir(app)?;
@@ -120,7 +237,66 @@ pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
     Ok(result)
 }
 
-/// Load one memory item give the id
+/// Loads a single page and all its snapshots by page ID.
+///
+/// # Overview
+///
+/// `load_page_details` retrieves a specific `VersionedPage` from disk by ID.
+/// It loads the page metadata and all associated snapshots in a single operation.
+/// This function is more efficient than [`load_all_pages`] when you need to
+/// access a single page.
+///
+/// # File Structure Expectations
+///
+/// The function expects the following layout:
+///
+/// ```text
+/// page_store/
+/// └─ {page_id}/
+///    ├─ page.json                 <- Required: page metadata
+///    └─ snapshots/                <- Required: snapshots directory
+///       ├─ snapshot_id_1/
+///       │  ├─ metadata.json       <- Snapshot metadata
+///       │  └─ content.json        <- Snapshot content
+///       └─ snapshot_id_2/
+///          └─ ...
+/// ```
+///
+/// # Invariants
+///
+/// - The page directory must exist; if not, `Err` is returned.
+/// - Both `page.json` and `snapshots/` directory must exist.
+/// - Each snapshot's `page_id` field must match the requested `page_id`.
+/// - A head snapshot (identified by `page_meta.head_snapshot_id`) must exist.
+///
+/// # Parameters
+///
+/// - `app`: Tauri application handle for resolving the page store directory.
+/// - `page_id`: The unique identifier of the page to load.
+///
+/// # Returns
+///
+/// - `Ok(VersionedPage)`: The fully loaded page with all snapshots.
+/// - `Err(String)`: If the page does not exist, metadata is corrupted,
+///   or invariant checks fail.
+///
+/// # Errors
+///
+/// Errors include:
+/// - The page directory does not exist.
+/// - `page.json` or `snapshots/` directory is missing.
+/// - Metadata files are malformed or unreadable.
+/// - The head snapshot does not exist.
+/// - A snapshot's `page_id` does not match the parent page's `id` (invariant violation).
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let page = load_page_details(app, "page_123".to_string())?;
+/// println!("Page title: {}", page.page_meta.title);
+/// println!("Total snapshots: {}", page.snapshots.len());
+/// println!("Current snapshot: {}", page.head_snapshot.id);
+/// ```
 #[command]
 pub fn load_page_details(app: AppHandle, page_id: String) -> Result<VersionedPage, String> {
     let page_store_dir = page_store_dir(app)?;
@@ -208,55 +384,6 @@ pub fn load_page_details(app: AppHandle, page_id: String) -> Result<VersionedPag
     })
 }
 
-#[command]
-pub fn set_active_node_id_of_memory_item(
-    app: AppHandle,
-    memory_id: String,
-    node_id: String,
-) -> Result<(), String> {
-    let page_store_dir = page_store_dir(app)?;
-
-    let memory_dir = page_store_dir.join(&memory_id);
-    if !memory_dir.exists() {
-        return Err(format!("Memory '{}' does not exist", memory_id));
-    }
-
-    // 1. Validate node existence
-    let node_dir = memory_dir.join("nodes").join(&node_id);
-    if !node_dir.exists() {
-        return Err(format!(
-            "Node '{}' does not exist in memory '{}'",
-            node_id, memory_id
-        ));
-    }
-
-    // 2. Load metadata.json
-    let metadata_path = memory_dir.join("metadata.json");
-    if !metadata_path.exists() {
-        return Err(format!(
-            "metadata.json not found for memory '{}'",
-            memory_id
-        ));
-    }
-
-    let metadata_raw = std::fs::read_to_string(&metadata_path)
-        .map_err(|e| format!("Failed to read metadata.json: {}", e))?;
-
-    let mut metadata: MemoryItem =
-        serde_json::from_str(&metadata_raw).map_err(|e| format!("Invalid metadata.json: {}", e))?;
-
-    // 3. Mutate
-    metadata.head_node_id = node_id;
-
-    // 4. Persist (pretty + deterministic)
-    let updated = serde_json::to_string_pretty(&metadata)
-        .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
-
-    std::fs::write(&metadata_path, updated)
-        .map_err(|e| format!("Failed to write metadata.json: {}", e))?;
-
-    Ok(())
-}
 
 /// Creates a new `Page` with its initial `Snapshot`, persisted atomically.
 ///
@@ -329,7 +456,7 @@ pub fn set_active_node_id_of_memory_item(
 ///
 /// # Returns
 ///
-/// - `Ok(())` if the page and its initial snapshot are successfully committed.
+/// - `Ok(VersionedPage)` with the newly created page and its snapshot.
 /// - `Err(String)` if serialization, filesystem operations, or identity
 ///   invariants fail.
 ///
@@ -341,13 +468,30 @@ pub fn set_active_node_id_of_memory_item(
 /// # Panics
 ///
 /// This function does not panic. All failures are returned as `Err(String)`.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let page_meta = PageMeta {
+///     id: "page_1".to_string(),
+///     title: "My First Page".to_string(),
+///     ..Default::default()
+/// };
+/// let snapshot = Snapshot {
+///     id: "snapshot_1".to_string(),
+///     page_id: "page_1".to_string(),
+///     content_json: serde_json::json!({}),
+///     ..Default::default()
+/// };
+/// let versioned_page = create_page_with_initial_snapshot(app, page_meta, snapshot)?;
+/// ```
 #[command]
 pub fn create_page_with_initial_snapshot(
     app: AppHandle,
     page_meta: PageMeta,
     snapshot: Snapshot,
-) -> Result<(), String> {
-    let page_store_dir = page_store_dir(app)?;
+) -> Result<VersionedPage, String> {
+    let page_store_dir = page_store_dir(app.clone())?;
 
     let staging_page_path = page_store_dir
         .join(".staging")
@@ -417,108 +561,145 @@ pub fn create_page_with_initial_snapshot(
             )
         })?;
     }
-
-    Ok(())
+    let page = load_page_details(app, page_meta.id).map_err(|e| format!("Failed to load page details: {}",e))?;
+    Ok(page)
 }
 
-/// Adds a new node to an existing memory item.
+/// Adds a new snapshot to an existing page.
 ///
 /// # Overview
 ///
-/// `add_new_node_to_existing_memory_item` is a **strict, non-idempotent**
-/// operation that appends a new `MemoryNode` to an already existing
-/// `MemoryItem`.
+/// `create_new_snapshot_of_page` appends a new `Snapshot` to an already existing
+/// `Page`. The operation is **strict and non-idempotent**, ensuring that:
 ///
-/// The function assumes that the memory item identified by
-/// `memory_item.memory_id` already exists on disk and that node identities
-/// (`node_id`) are unique within that memory item.
+/// - The parent page exists on disk.
+/// - The snapshot ID is unique within that page.
+/// - Both are persisted using atomic staging and commit.
 ///
-/// Node creation is performed using a **staged write + atomic commit**
-/// pattern to ensure that partially written nodes are never visible.
+/// Snapshots represent versioned states of a page. Each snapshot contains
+/// metadata and content. The page metadata tracks the `head_snapshot_id`,
+/// which points to the active snapshot.
 ///
 /// # Persistence Model
 ///
-/// Nodes are stored under the memory item's `nodes/` directory:
+/// Snapshots are stored under the page's `snapshots/` directory:
 ///
 /// ```text
-/// memory_spaces/{memory_id}/
-/// └─ nodes/
-///    ├─ {existing_node_id}/
-///    └─ {node_id}/
+/// page_store/{page_id}/
+/// ├─ page.json
+/// └─ snapshots/
+///    ├─ {existing_snapshot_id}/
+///    │  ├─ metadata.json
+///    │  └─ content.json
+///    └─ {new_snapshot_id}/
 ///       ├─ metadata.json
-///       ├─ content.json
-///       └─ content.md
+///       └─ content.json
 /// ```
 ///
-/// During creation, node data is first written to:
+/// During creation, snapshot data is staged in:
 ///
 /// ```text
-/// memory_spaces/{memory_id}/nodes/.staging/{node_id}/
+/// page_store/{page_id}/snapshots/.staging/{snapshot_id}/
 /// ```
 ///
 /// After all files are written successfully, the staging directory is
-/// atomically renamed to its final location.
+/// atomically renamed to the final location.
+///
+/// # Atomic Updates
+///
+/// After the snapshot is committed, the page metadata (`page.json`) is
+/// updated atomically using a temporary file and rename:
+///
+/// 1. Write updated metadata to `page.json.tmp`
+/// 2. Rename `page.json.tmp` to `page.json`
+///
+/// This ensures that page metadata updates are never partially visible.
 ///
 /// # Staging Semantics
 ///
-/// - Staging is **local to this operation** and scoped to the node being added.
-/// - If the final node directory already exists, the operation fails and
+/// - Staging is **local to this operation** and scoped to the snapshot being added.
+/// - If the final snapshot directory already exists, the operation fails and
 ///   no overwrite occurs.
 /// - The staging directory is not committed unless all writes succeed.
+/// - Stale `.staging` directories are cleaned up before writing new snapshots.
 ///
-/// This guarantees that callers will never observe a partially created node.
+/// This guarantees that callers never observe a partially created snapshot.
 ///
 /// # Identity & Idempotency
 ///
-/// - `memory_node.node_id` is treated as a **strong identity**.
+/// - `snapshot.id` is treated as a **strong identity** within the page.
 /// - This function is **not idempotent**.
-/// - Attempting to add a node with an existing `node_id` results in an error.
+/// - Attempting to add a snapshot with an existing `snapshot.id` results in an error.
 ///
-/// Updating or replacing a node must be handled by a separate, explicit API.
+/// Updating or replacing a snapshot must be handled by a separate, explicit API.
 ///
 /// # Failure Guarantees
 ///
 /// - If serialization fails, no filesystem changes are committed.
-/// - If any file write fails, the final node directory is not created.
-/// - If the function returns `Err`, existing nodes remain unchanged.
-/// - Partial data may remain only inside `.staging/{node_id}`.
+/// - If any file write fails, the final snapshot directory is not created.
+/// - If the function returns `Err`, all existing snapshots remain unchanged.
+/// - Partial data may remain only inside `.staging/{snapshot_id}`.
+/// - If snapshot commit succeeds but page metadata update fails, the error
+///   message indicates this ("Snapshots created, but failed to update...").
 ///
 /// # Parameters
 ///
-/// - `app`: Application handle used to resolve the memory spaces directory.
-/// - `memory_item`: The parent memory item to which the node will be added.
-/// - `memory_node`: The node to be created and persisted.
+/// - `app`: Application handle used to resolve the page store directory.
+/// - `page_meta`: The metadata of the parent page. The `head_snapshot_id`
+///   should be updated to the new snapshot's ID if you want it to become active.
+/// - `snapshot`: The snapshot to be created and persisted, including metadata
+///   and `content_json`.
 ///
 /// # Returns
 ///
-/// - `Ok(())` if the node was successfully written and committed.
-/// - `Err(String)` if any invariant check, serialization, or filesystem
-///   operation fails.
+/// - `Ok(VersionedPage)`: The updated page with all snapshots, including the new one.
+/// - `Err(String)`: If the parent page does not exist, the snapshot ID collides,
+///   serialization fails, or filesystem operations fail.
 ///
 /// # Preconditions
 ///
-/// - The memory item identified by `memory_item.memory_id` must already exist.
-/// - The caller must guarantee that `node_id` is unique within the memory item.
+/// - The page identified by `page_meta.id` must already exist on disk.
+/// - The caller should ensure `snapshot.page_id == page_meta.id`.
+/// - The snapshot ID must be unique within the page.
 ///
 /// # Notes
 ///
 /// - This function does not validate the existence or integrity of the parent
-///   memory item beyond filesystem layout expectations.
-/// - Cleanup of stale `.staging` directories is considered hygiene and may be
-///   handled elsewhere.
+///   page beyond filesystem layout expectations.
+/// - Cleanup of stale `.staging` directories is performed at the beginning
+///   of each operation.
+/// - The page metadata must be valid JSON; if not, the update fails with
+///   an appropriate error.
 ///
 /// # Panics
 ///
 /// This function does not panic. All errors are returned as `Err(String)`.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let mut page_meta = existing_page.page_meta.clone();
+/// page_meta.head_snapshot_id = "snapshot_2".to_string();
+///
+/// let new_snapshot = Snapshot {
+///     id: "snapshot_2".to_string(),
+///     page_id: "page_1".to_string(),
+///     content_json: serde_json::json!({"updated": true}),
+///     ..Default::default()
+/// };
+///
+/// let updated_page = create_new_snapshot_of_page(app, page_meta, new_snapshot)?;
+/// println!("Page now has {} snapshots", updated_page.snapshots.len());
+/// ```
 #[command]
 pub fn create_new_snapshot_of_page(
     app: AppHandle,
     page_meta: PageMeta,
     snapshot: Snapshot,
-) -> Result<(), String> {
+) -> Result<VersionedPage, String> {
     use std::fs;
 
-    let page_store_dir = page_store_dir(app)?;
+    let page_store_dir = page_store_dir(app.clone())?;
     let page_dir = page_store_dir.join(&page_meta.id);
 
     if !page_dir.exists() {
@@ -596,16 +777,68 @@ pub fn create_new_snapshot_of_page(
             snapshot.id, e
         )
     })?;
-
-    Ok(())
+    let page = load_page_details(app, page_meta.id).map_err(|e| format!("Failed to load page details: {}",e))?;
+    Ok(page)
 }
 
+/// Adds a tag to a page's metadata.
+///
+/// # Overview
+///
+/// `upsert_tag_on_page` associates a tag with a page by storing the tag ID
+/// in the page's metadata. If the tag is already associated, the operation
+/// is idempotent and performs no change.
+///
+/// Tags are stored as a list of IDs in `page.json`. This function:
+/// - Loads the current page metadata
+/// - Appends the tag ID if not already present
+/// - Atomically updates `page.json`
+///
+/// # Atomicity
+///
+/// The metadata update uses a staged write + atomic rename pattern:
+/// 1. Write updated metadata to `page.json.tmp`
+/// 2. Rename `page.json.tmp` to `page.json` (atomic)
+///
+/// This ensures the metadata file is never partially written.
+///
+/// # Parameters
+///
+/// - `app`: Application handle for resolving the page store directory.
+/// - `page_id`: The ID of the page to tag.
+/// - `tag_id`: The ID of the tag to add.
+///
+/// # Returns
+///
+/// - `Ok(PageMeta)`: The updated page metadata with the tag added.
+/// - `Err(String)`: If the page does not exist, metadata is corrupted,
+///   or filesystem operations fail.
+///
+/// # Errors
+///
+/// Errors include:
+/// - The page directory does not exist.
+/// - `page.json` cannot be read or is malformed.
+/// - The temporary file cannot be written.
+/// - The atomic rename fails.
+///
+/// # Idempotency
+///
+/// If the tag is already present, the function returns `Ok` without changes.
+/// This makes it safe to call multiple times with the same tag ID.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let updated_meta = upsert_tag_on_page(app, "page_1".to_string(), "tag_important".to_string())?;
+/// println!("Page now has {} tags", updated_meta.tags.len());
+/// ```
 #[command]
 pub fn upsert_tag_on_page(
     app: AppHandle,
     page_id: String,
     tag_id: String,
-) -> Result<(), String> {
+) -> Result<PageMeta, String> {
     use std::fs;
 
     let page_store_dir = page_store_dir(app)?;
@@ -638,15 +871,70 @@ pub fn upsert_tag_on_page(
     fs::rename(&page_json_tmp_path, &page_json_path)
         .map_err(|e| format!("Failed to atomically replace page metadata: {}", e))?;
 
-    Ok(())
+    Ok(page_meta)
 }
 
+/// Removes a tag from a page's metadata.
+///
+/// # Overview
+///
+/// `delete_tag_from_page` disassociates a tag from a page by removing its ID
+/// from the page's metadata. The operation is strict: if the tag is not present,
+/// an error is returned.
+///
+/// Tags are removed from the list of tag IDs in `page.json`. This function:
+/// - Loads the current page metadata
+/// - Removes the tag ID if present
+/// - Returns an error if the tag was not found
+/// - Atomically updates `page.json`
+///
+/// # Atomicity
+///
+/// The metadata update uses a staged write + atomic rename pattern:
+/// 1. Write updated metadata to `page.json.tmp`
+/// 2. Rename `page.json.tmp` to `page.json` (atomic)
+///
+/// This ensures the metadata file is never partially written.
+///
+/// # Parameters
+///
+/// - `app`: Application handle for resolving the page store directory.
+/// - `page_id`: The ID of the page from which to remove the tag.
+/// - `tag_id`: The ID of the tag to remove.
+///
+/// # Returns
+///
+/// - `Ok(PageMeta)`: The updated page metadata with the tag removed.
+/// - `Err(String)`: If the page does not exist, the tag is not found, metadata
+///   is corrupted, or filesystem operations fail.
+///
+/// # Errors
+///
+/// Errors include:
+/// - The page directory does not exist.
+/// - The tag ID is not present on the page.
+/// - `page.json` cannot be read or is malformed.
+/// - The temporary file cannot be written.
+/// - The atomic rename fails.
+///
+/// # Strictness
+///
+/// Unlike [`upsert_tag_on_page`], this function fails if the tag is not present.
+/// Use this when you want to ensure the tag was actually deleted and detect
+/// unexpected states.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let updated_meta = delete_tag_from_page(app, "page_1".to_string(), "tag_important".to_string())?;
+/// println!("Page now has {} tags", updated_meta.tags.len());
+/// ```
 #[command]
 pub fn delete_tag_from_page(
     app: AppHandle,
     page_id: String,
     tag_id: String,
-) -> Result<(), String> {
+) -> Result<PageMeta, String> {
     use std::fs;
 
     let page_store_dir = page_store_dir(app)?;
@@ -686,10 +974,83 @@ pub fn delete_tag_from_page(
     fs::rename(&page_json_tmp_path, &page_json_path)
         .map_err(|e| format!("Failed to atomically replace page metadata: {}", e))?;
 
-    Ok(())
+    Ok(page_meta)
 }
 
+/// Deletes a page and all its associated snapshots.
 ///
+/// # Overview
+///
+/// `delete_page` removes an entire page directory (including all snapshots,
+/// metadata, and content) from the page store. The operation is performed
+/// using a safe **move-then-delete** pattern:
+///
+/// 1. The page directory is moved to a `.delete/` staging area
+/// 2. The staged directory is then removed
+///
+/// This two-stage approach provides some protection against concurrent
+/// access and allows for potential recovery if needed during implementation.
+///
+/// # Deletion Pattern
+///
+/// ```text
+/// Before:
+/// page_store/
+/// ├─ page_id/
+/// │  ├─ page.json
+/// │  └─ snapshots/
+/// └─ ...
+///
+/// After:
+/// page_store/
+/// ├─ .delete/
+/// │  └─ page_id/       <- deleted on next step
+/// └─ ...
+/// ```
+///
+/// # Parameters
+///
+/// - `app`: Application handle for resolving the page store directory.
+/// - `page_id`: The ID of the page to delete.
+///
+/// # Returns
+///
+/// - `Ok(())`: If the page and all its contents are successfully deleted.
+/// - `Err(String)`: If the page does not exist, cannot be moved, or cannot be deleted.
+///
+/// # Errors
+///
+/// Errors include:
+/// - The page directory does not exist (returns specific "does not exist" message).
+/// - The page directory cannot be renamed to the staging area.
+/// - The `.delete/` directory cannot be created.
+/// - The staged directory cannot be fully removed.
+///
+/// # Strictness
+///
+/// This function is strict: if the page does not exist, it returns an error
+/// rather than succeeding silently. This helps detect unexpected states.
+///
+/// # Failure Guarantees
+///
+/// - If the page cannot be moved to `.delete/`, the original page directory
+///   remains untouched.
+/// - If the deletion from `.delete/` fails, the page data remains in the
+///   staging area and can potentially be recovered.
+/// - If the function returns `Err`, the original page at `page_store/{page_id}/`
+///   is guaranteed to be unchanged.
+///
+/// # Performance Notes
+///
+/// The time complexity is O(S), where S is the total size of all snapshots
+/// and metadata. For large pages with many snapshots, deletion may take time.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// delete_page(app, "page_1".to_string())?;
+/// println!("Page successfully deleted");
+/// ```
 #[command]
 pub fn delete_page(app: AppHandle, page_id: String) -> Result<(), String> {
     use std::fs;
@@ -716,113 +1077,5 @@ pub fn delete_page(app: AppHandle, page_id: String) -> Result<(), String> {
     fs::remove_dir_all(&delete_target)
         .map_err(|e| format!("Failed to delete page {}: {}", page_id, e))?;
 
-    Ok(())
-}
-
-///
-#[command]
-pub fn get_memory_item_active_node_nodes(
-    app: AppHandle,
-    memory_id: String,
-) -> Result<MemoryPayload, String> {
-    use std::fs;
-
-    let page_store_dir = page_store_dir(app)?;
-    let memory_space_dir = page_store_dir.join(&memory_id);
-
-    // 1. Read MemoryItem metadata
-    let metadata_path = memory_space_dir.join("metadata.json");
-    if !metadata_path.exists() {
-        return Err("memory item metadata.json not found".into());
-    }
-
-    let metadata_str = fs::read_to_string(&metadata_path)
-        .map_err(|e| format!("failed to read metadata.json: {e}"))?;
-
-    let memory_item: MemoryItem = serde_json::from_str(&metadata_str)
-        .map_err(|e| format!("failed to parse MemoryItem: {e}"))?;
-
-    // 2. Read all nodes
-    let nodes_dir = memory_space_dir.join("nodes");
-    if !nodes_dir.exists() {
-        return Err("nodes directory not found".into());
-    }
-
-    let mut nodes: Vec<MemoryNode> = Vec::new();
-    let mut head_node: Option<MemoryNode> = None;
-
-    for entry in fs::read_dir(&nodes_dir).map_err(|e| format!("failed to read nodes dir: {e}"))? {
-        let entry = entry.map_err(|e| format!("invalid dir entry: {e}"))?;
-        let path = entry.path();
-
-        if !path.is_dir() {
-            continue;
-        }
-
-        let node_id = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .ok_or("invalid node directory name")?
-            .to_string();
-
-        let node_metadata_path = path.join("metadata.json");
-        if !node_metadata_path.exists() {
-            continue; // or Err, depending on how strict you want to be
-        }
-
-        let node_str = fs::read_to_string(&node_metadata_path)
-            .map_err(|e| format!("failed to read node metadata: {e}"))?;
-
-        let node: MemoryNode = serde_json::from_str(&node_str)
-            .map_err(|e| format!("failed to parse MemoryNode: {e}"))?;
-
-        if node_id == memory_item.head_node_id {
-            head_node = Some(node.clone());
-        }
-
-        nodes.push(node);
-    }
-
-    let head_node = head_node.ok_or("head_node_id does not match any node directory")?;
-    // println!("{:#?}",head_node);
-
-    Ok(MemoryPayload {
-        memory_item,
-        head_node,
-        nodes,
-    })
-}
-
-#[command]
-pub fn update_memory_item_metadata(app: AppHandle, memory_item: MemoryItem) -> Result<(), String> {
-    use std::fs;
-    let page_store_dir = page_store_dir(app)?;
-    let memory_space_dir = page_store_dir.join(&memory_item.memory_id);
-    if !memory_space_dir.exists() && !memory_space_dir.is_dir() {
-        return Err(format!(
-            "Memory item {} does not exists",
-            &memory_item.memory_id
-        ));
-    }
-    let json = serde_json::to_string_pretty(&memory_item).map_err(|e| {
-        format!(
-            "Failed to serialize the memory item {}: {}",
-            &memory_item.memory_id, e
-        )
-    })?;
-    let json_path = memory_space_dir.join("metadata.json");
-
-    let tmp_json_path = memory_space_dir.join("metadata.json.tmp");
-
-    {
-        fs::write(&tmp_json_path, &json)
-            .map_err(|e| format!("Failed to write to metadata.json.tmp :{}", e))?;
-        fs::rename(&tmp_json_path, &json_path).map_err(|e| {
-            format!(
-                "Failed to atomically rename from {:?} to {:?} : {}",
-                &tmp_json_path, &json_path, e
-            )
-        })?;
-    }
     Ok(())
 }
