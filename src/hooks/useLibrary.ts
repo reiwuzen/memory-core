@@ -2,7 +2,10 @@ import { useLibraryStore } from "@/store/useLibrary.store";
 import { useMemo } from "react";
 import { PageService } from "@/service/page.service";
 export const useLibrary = () => {
-  const {pages,setPages,activePage,setActivePage } = useLibraryStore();
+  const pages = useLibraryStore((s) => s.pages);
+  const setPages = useLibraryStore((s) => s.setPages);
+  const activePage = useLibraryStore((s) => s.activePage);
+  const setActivePage = useLibraryStore((s) => s.setActivePage);
   const {
     createPage,
     createNewSnapshotOfPage,
@@ -10,7 +13,7 @@ export const useLibrary = () => {
     loadPages,
     reloadPage,
     upsertTagOnPage,
-    deleteTagFromPage
+    deleteTagFromPage,
   } = PageService();
   const pagesStore = useMemo(() => {
     return {
@@ -23,19 +26,26 @@ export const useLibrary = () => {
     activePage: {
       clear: () => setActivePage(null),
       set: setActivePage,
-      reload: reloadPage,
-
+      reload: async () => {
+        (await reloadPage(activePage.pageMeta.id))
+        .match(
+          (vp)=> setActivePage(vp),
+          ()=>{}
+        )
+        ;
+      },
     },
 
     page: {
       create: createPage,
       createNewSnapshot: createNewSnapshotOfPage,
       delete: deletePage,
-      addTag: (pageId:string,tagId:string)=>{
-        return upsertTagOnPage(pageId,tagId)},
-      removeTag: (pageId:string,tagId:string) => {
-        return deleteTagFromPage(pageId,tagId)
-      }
+      addTag: (pageId: string, tagId: string) => {
+        return upsertTagOnPage(pageId, tagId);
+      },
+      removeTag: (pageId: string, tagId: string) => {
+        return deleteTagFromPage(pageId, tagId);
+      },
     },
     pages: {
       load: async () => {
