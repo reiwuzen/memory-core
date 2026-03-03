@@ -3,11 +3,15 @@ import "./libraryItem.scss";
 import "../../../../../../../local/blocky-react/src/styles.css";
 import { useTags } from "@/hooks/useTag";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Editor } from "../../../../../../../local/blocky-react/src/editor";
+import {
+  Editor,
+  type EditorHandle,
+} from "../../../../../../../local/blocky-react/src/index";
 import { AnyBlock } from "@reiwuzen/blocky";
 import { toast } from "sonner";
 
 import { useLibrary } from "@/hooks/useLibrary";
+import { Snapshot } from "@/types/snapshot";
 // import { areBlocksSemanticallyEqual } from "@/helper/compareTwoBlocks";
 
 const LibraryItem = () => {
@@ -16,8 +20,12 @@ const LibraryItem = () => {
   const { tagsData } = useTags();
   const { headSnapshot, pageMeta } = pagesStore.activePage;
   const [showTagPicker, setShowTagPicker] = useState<boolean>(false);
-  const [blocks, setBlocks] = useState<AnyBlock[]>();
   const [editable, setEditable] = useState<boolean>(false);
+  const editorRef = useRef<EditorHandle>(null);
+
+  //local
+  const [viewSnapshot, setViewSnapshot] = useState<Snapshot>(headSnapshot);
+  const [showSnapshotsList, setShowSnapshotsList] = useState<boolean>(false);
 
   const addTagBtnRef = useRef<HTMLButtonElement>(null);
   const tagPickerRef = useRef<HTMLDivElement>(null);
@@ -34,53 +42,37 @@ const LibraryItem = () => {
     [tagsData.tags, pageTagIds],
   );
 
-  const saveResolverRef = useRef<{
-    resolve: () => void;
-    reject: (e: unknown) => void;
-  } | null>(null);
-
   useEffect(() => {
     const handleTagPicker = (e: MouseEvent) => {
       if (
         tagPickerRef.current &&
-        !tagPickerRef.current.contains(e.target as Node)
-        && !addTagBtnRef.current.contains(e.target as Node)
+        !tagPickerRef.current.contains(e.target as Node) &&
+        !addTagBtnRef.current.contains(e.target as Node)
       )
         setShowTagPicker(false);
     };
-    
+
     document.addEventListener("mousedown", handleTagPicker);
     return () => {
       setEditable(false);
       document.removeEventListener("mousedown", handleTagPicker);
     };
   }, [showTagPicker]);
-  useEffect(() => {
-  const b: AnyBlock[] = JSON.parse(headSnapshot.contentJson);
-  setBlocks(b);
-}, [headSnapshot.contentJson]);
 
-  const handleSave = async (freshBlocks: AnyBlock[]) => {
-    setBlocks(freshBlocks);
-    try {
-      await pageActions.page.createNewSnapshot(
-        pagesStore.activePage.pageMeta,
-        JSON.stringify(freshBlocks),
-      );
-      await pageActions.activePage.reload(headSnapshot.pageId);
-      saveResolverRef.current?.resolve();
-    } catch (e) {
-      saveResolverRef.current?.reject(e);
-    } finally {
-      saveResolverRef.current = null;
+  const saveSnapshot = async (): Promise<void> => {
+    const freshBlocks = editorRef.current?.serialize();
+
+    if (!freshBlocks) {
+      throw new Error("Editor not ready");
     }
-  };
-
-  const saveSnapshot = () => {
-    return new Promise<void>((resolve, reject) => {
-      saveResolverRef.current = { resolve, reject };
-      setEditable(false); // triggers onChange → handleSave
-    });
+    setEditable(false);
+    (await pageActions.page.createNewSnapshot(
+      pagesStore.activePage.pageMeta,
+      JSON.stringify(freshBlocks),
+    )).match(
+      (vp)=>pageActions.activePage.set(vp),
+      err => {throw err}
+    );
   };
 
   const deleteAndExit = async () => {
@@ -93,7 +85,6 @@ const LibraryItem = () => {
     setActiveTabView("list");
   };
 
-  // console.log(JSON.parse(headNode.content_json))
   return (
     <article className="page-snapshot">
       <div className="page-snapshot-accessory-bar">
@@ -123,20 +114,6 @@ const LibraryItem = () => {
           <button
             className="page-snapshot-save-btn"
             onClick={async () => {
-              // const oldBlocks: AnyBlock[] = JSON.parse(
-              //   headSnapshot.contentJson,
-              // );
-              // const bool = areBlocksSemanticallyEqual(
-              //   oldBlocks,
-              //   blocks,
-              // );
-              // if (bool) {
-              //   setEditable(false);
-              //   toast.warning(
-              //     "The content is still same, please change something",
-              //   );
-              //   return;
-              // }
               toast.promise(saveSnapshot(), {
                 loading: "Saving node",
                 success: "Node saved successfully",
@@ -148,6 +125,7 @@ const LibraryItem = () => {
               width="800px"
               height="800px"
               viewBox="0 0 24 24"
+              stroke="currentColor"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
@@ -189,12 +167,43 @@ const LibraryItem = () => {
           </svg>
         </button>
         <button
-        ref={addTagBtnRef}
+          className="page-snapshot-view-btn"
+          onClick={async (e) => {
+            e.stopPropagation();
+            setShowSnapshotsList((p) => !p);
+          }}
+        >
+          Snapshots
+        </button>
+        {showSnapshotsList && (
+          <div className="snapshots">
+            <div className="snapshots__header">
+              <span>View Snapshots</span>
+            </div>
+            <ul className="snapshots__list">
+              {pagesStore.activePage.snapshots.map((s) => (
+                <li
+                  key={s.id}
+                  className={`${s.id === viewSnapshot.id ? "active" : ""}`}
+                  onClick={() => {
+                    setViewSnapshot(s);
+                    setShowSnapshotsList(false);
+                  }}
+                >
+                  <span>{s?.comment}</span>
+                  <time>{new Date(s.createdAt).toLocaleString()}</time>
+                  <span>{headSnapshot.id === s.id ? "head" : ""}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <button
+          ref={addTagBtnRef}
           className="page-snapshot-add_tag-btn"
           onClick={async (e) => {
             e.stopPropagation();
-            setShowTagPicker(p=>!p);
-            // const ok = await addTagToNode(headNode.memory_id,headNode.node_id,)
+            setShowTagPicker((p) => !p);
           }}
         >
           Add Tag
@@ -221,13 +230,16 @@ const LibraryItem = () => {
                         t.id,
                       )
                     ).match(
-                      () => {},
+                      (pageMeta) => {
+                        pageActions.activePage.set({
+                          pageMeta,
+                          snapshots: pagesStore.activePage.snapshots,
+                          headSnapshot: pagesStore.activePage.headSnapshot,
+                        });
+                      },
                       (error) => console.log(`[TagNotAdded]: ${error}`),
                     );
                     setShowTagPicker(false);
-                    (
-                      await pageActions.activePage.reload(headSnapshot.pageId)
-                    ).inspectErr((e) => console.log("[reload] err: ", e));
                   }}
                 >
                   {t.label}
@@ -241,9 +253,30 @@ const LibraryItem = () => {
       <header className="page-snapshot__header">
         <h1 className="page-snapshot__title">{pageMeta.title}</h1>
 
-        <time className="page-snapshot__timestamp">
-          {new Date(headSnapshot.createdAt).toLocaleString()}
-        </time>
+        <div className="page-snapshot__timestamp">
+          <div>
+            <span className="label">Page created</span>
+            <time dateTime={pagesStore.activePage.pageMeta.createdAt}>
+              {new Date(
+                pagesStore.activePage.pageMeta.createdAt,
+              ).toLocaleString()}
+            </time>
+          </div>
+
+          <div>
+            <span className="label">Page updated</span>
+            <time dateTime={headSnapshot.createdAt}>
+              {new Date(headSnapshot.createdAt).toLocaleString()}
+            </time>
+          </div>
+
+          <div>
+            <span className="label">Snapshot created</span>
+            <time dateTime={viewSnapshot.createdAt}>
+              {new Date(viewSnapshot.createdAt).toLocaleString()}
+            </time>
+          </div>
+        </div>
       </header>
       <ul className="page-snapshot__tags">
         {assignedTags.length > 0 ? (
@@ -260,14 +293,14 @@ const LibraryItem = () => {
         className="page-snapshot__content"
         // onClick={()=>{}}
       >
-        {blocks && (
+        {
           <Editor
-            key={headSnapshot.id}
-            initialBlocks={blocks}
-            onChange={handleSave}
+            key={viewSnapshot.id}
+            ref={editorRef}
+            initialBlocks={JSON.parse(viewSnapshot.contentJson) as AnyBlock[]}
             editable={editable}
           />
-        )}
+        }
       </section>
     </article>
   );
