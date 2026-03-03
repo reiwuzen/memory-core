@@ -1,13 +1,13 @@
 import { useActiveTab } from "@/hooks/useActiveTab";
 import "./libraryItem.scss";
-import "../../../../../../../local/blocky-react/src/styles.css";
+import "@reiwuzen/blocky-react/styles.css";
 import { useTags } from "@/hooks/useTag";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Editor,
   type EditorHandle,
-} from "../../../../../../../local/blocky-react/src/index";
-import { AnyBlock } from "@reiwuzen/blocky";
+} from "@reiwuzen/blocky-react";
+import { type AnyBlock } from "@reiwuzen/blocky";
 import { toast } from "sonner";
 
 import { useLibrary } from "@/hooks/useLibrary";
@@ -41,6 +41,10 @@ const LibraryItem = () => {
     () => tagsData.tags.filter((tag) => !pageTagIds.has(tag.id)),
     [tagsData.tags, pageTagIds],
   );
+
+  useEffect(() => {
+  setViewSnapshot(headSnapshot);
+}, [headSnapshot.id]);
 
   useEffect(() => {
     const handleTagPicker = (e: MouseEvent) => {
