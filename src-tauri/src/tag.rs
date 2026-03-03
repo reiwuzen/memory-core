@@ -6,7 +6,7 @@ use crate::schema::Tag;
 /// fn to create data/tags/ directory if it doesn't exist
 #[command]
 pub fn create_tags_dir(app:AppHandle) -> Result<PathBuf,String>{
-    let app_dir = get_app_dir(app)?;
+    let app_dir = get_app_dir(&app)?;
     let tags_dir  = app_dir.join("tags");
     if !tags_dir.exists()
     {
