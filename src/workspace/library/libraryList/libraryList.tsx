@@ -19,7 +19,7 @@ const LibraryList = () => {
       <h1>Library</h1>
 
       <div className="library-list-items">
-        {pagesStore.pages.map(({ pageMeta, headSnapshot, snapshots }) => (
+        {pagesStore.pages.map(({ pageMeta,  normalizedSnapshots }) => (
           <div
             key={pageMeta.id}
             className="library-list-item"
@@ -29,8 +29,7 @@ const LibraryList = () => {
 
               pageActions.activePage.set({
                 pageMeta,
-                headSnapshot,
-                snapshots,
+                normalizedSnapshots,
               });
               setActiveTabTypeAndView("library", "detail");
             }}
