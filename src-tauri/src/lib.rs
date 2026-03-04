@@ -11,6 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             storage::page_store_dir,
+            storage::create_page,
             storage::create_page_with_initial_snapshot,
             storage::create_new_snapshot_of_page,
             storage::delete_page,
