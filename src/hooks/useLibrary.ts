@@ -1,6 +1,8 @@
 import { useLibraryStore } from "@/store/useLibrary.store";
 import { useMemo } from "react";
 import { PageService } from "@/service/page.service";
+import { normalizeSnapshots } from "@/helper/normalizeSnapshots";
+import { normalizeVersionedPages } from "@/helper/normaliseVersionedPage";
 export const useLibrary = () => {
   const pages = useLibraryStore((s) => s.pages);
   const setPages = useLibraryStore((s) => s.setPages);
@@ -27,12 +29,15 @@ export const useLibrary = () => {
       clear: () => setActivePage(null),
       set: setActivePage,
       reload: async () => {
-        (await reloadPage(activePage.pageMeta.id))
-        .match(
-          (vp)=> setActivePage(vp),
-          ()=>{}
-        )
-        ;
+        if (!activePage) return
+        (await reloadPage(activePage.pageMeta.id)).match(
+          (vp) =>
+            setActivePage({
+              pageMeta: vp.pageMeta,
+              normalizedSnapshots: normalizeSnapshots(vp.snapshots),
+            }),
+          () => {},
+        );
       },
     },
 
@@ -51,7 +56,7 @@ export const useLibrary = () => {
       load: async () => {
         const res = await loadPages();
         if (res.ok) {
-          setPages([...res.value]);
+          setPages(normalizeVersionedPages(res.value));
         } else {
           setPages([]);
         }
