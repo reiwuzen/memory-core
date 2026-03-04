@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import type { VersionedPage } from "@/types/page";
+import type { NormalizedVersionedPage } from "@/types/page";
 
 type LibraryStore = {
-  pages: VersionedPage[]
-  setPages: (p: VersionedPage[]) => void;
-  activePage: VersionedPage
-  setActivePage: (p : VersionedPage) => void
+  pages: NormalizedVersionedPage[]
+  setPages: (p: NormalizedVersionedPage[]) => void;
+  activePage: NormalizedVersionedPage
+  setActivePage: (p : NormalizedVersionedPage) => void
 };
 
 export const useLibraryStore = create<LibraryStore>((set) => ({
