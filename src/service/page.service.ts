@@ -1,151 +1,162 @@
-import { v7 } from "uuid";
-import { invoke } from "@tauri-apps/api/core";
-import { createBlock } from "@reiwuzen/blocky";
-import { Result } from "@reiwuzen/result";
-import { PageMeta, VersionedPage, PageType } from "@/types/page";
-import { Snapshot } from "@/types/snapshot";
-import { DEFAULT_PARAGRAPH_BLOCK } from "@/constants/content";
+import { v7 } from "uuid"
+import { invoke } from "@tauri-apps/api/core"
+import { createBlock } from "@reiwuzen/blocky"
+import { Result } from "@reiwuzen/result"
+
+import {
+  PageMeta,
+  VersionedPage,
+  PageType,
+  NormalizedVersionedPage
+} from "@/types/page"
+
+import { Snapshot } from "@/types/snapshot"
+import { DEFAULT_PARAGRAPH_BLOCK } from "@/constants/content"
+import { normalizeSnapshots } from "@/helper/normalizeSnapshots"
+
+const now = () => new Date().toISOString()
+
+async function invokeSafe<T>(
+  command: string,
+  args?: Record<string, unknown>
+): Promise<Result<T, unknown>> {
+  try {
+    const value = await invoke<T>(command, args)
+    return Result.Ok(value)
+  } catch (err) {
+    return Result.Err(err)
+  }
+}
+
 export const PageService = () => {
+
   const createPage = async (
     title: string,
-    type: PageType,
-  ): Promise<Result<VersionedPage>> => {
-    const pageId = v7();
-    const snapshotId = v7();
+    type: PageType
+  ): Promise<Result<NormalizedVersionedPage, unknown>> => {
+
+    const pageId = v7()
+    const time = now()
+
     const pageMeta: PageMeta = {
       id: pageId,
       title,
-      createdAt: new Date().toISOString(),
-      headSnapshotId: snapshotId,
-      type: type,
+      type,
+      createdAt: time,
+      headSnapshotId: null,
       bookId: null,
       parentPageId: null,
-      lastOpenedAt: new Date().toISOString(),
-      lastUpdatedAt: new Date().toISOString(),
-      tags: [],
-    };
+      lastOpenedAt: time,
+      lastUpdatedAt: time,
+      tags: []
+    }
+
+    const res = await invokeSafe<VersionedPage>("create_page", { pageMeta })
+
+    return res.map(vp => ({
+      pageMeta: vp.pageMeta,
+      normalizedSnapshots: normalizeSnapshots(vp.snapshots)
+    }))
+  }
+
+  const createPageWithInitialSnapshot = async (
+    title: string,
+    type: PageType
+  ): Promise<Result<VersionedPage, unknown>> => {
+
+    const pageId = v7()
+    const snapshotId = v7()
+    const time = now()
+
+    const pageMeta: PageMeta = {
+      id: pageId,
+      title,
+      type,
+      createdAt: time,
+      headSnapshotId: snapshotId,
+      bookId: null,
+      parentPageId: null,
+      lastOpenedAt: time,
+      lastUpdatedAt: time,
+      tags: []
+    }
+
     const snapshot: Snapshot = {
-      parentSnapshotId: null,
       id: snapshotId,
-      createdAt: new Date().toISOString(),
       pageId,
+      parentSnapshotId: null,
+      createdAt: time,
       contentJson: JSON.stringify([
         createBlock("paragraph").match(
-          (b) => b,
-          () => DEFAULT_PARAGRAPH_BLOCK,
-        ),
-      ]),
-    };
-
-    try {
-      const res = await invoke<VersionedPage>(
-        "create_page_with_initial_snapshot",
-        {
-          pageMeta: pageMeta,
-          snapshot: snapshot,
-        },
-      );
-      return Result.Ok(res);
-    } catch (error) {
-      return Result.Err(error);
+          b => b,
+          () => DEFAULT_PARAGRAPH_BLOCK
+        )
+      ])
     }
-  };
+
+    return invokeSafe("create_page_with_initial_snapshot", {
+      pageMeta,
+      snapshot
+    })
+  }
+
   const createNewSnapshotOfPage = async (
     pageMeta: PageMeta,
-    contentJson: string,
-  ): Promise<Result<VersionedPage>> => {
-    const newSnapshotId = v7();
+    contentJson: string
+  ): Promise<Result<VersionedPage, unknown>> => {
 
-    const updatedPageMeta = {
+    const snapshotId = v7()
+    const time = now()
+
+    const updatedPageMeta: PageMeta = {
       ...pageMeta,
-      headSnapshotId: newSnapshotId,
-      lastUpdatedAt: new Date().toISOString(),
-    };
+      headSnapshotId: snapshotId,
+      lastUpdatedAt: time
+    }
+
     const snapshot: Snapshot = {
+      id: snapshotId,
       pageId: pageMeta.id,
-      id: newSnapshotId,
-      createdAt: new Date().toISOString(),
-      contentJson,
       parentSnapshotId: null,
-    };
-
-    try {
-      const res = await invoke<VersionedPage>("create_new_snapshot_of_page", {
-        pageMeta: updatedPageMeta,
-        snapshot: snapshot,
-      });
-      return Result.Ok(res);
-    } catch (error) {
-      return Result.Err(error);
+      createdAt: time,
+      contentJson
     }
-  };
 
-  const deletePage = async (pageId: string): Promise<Result<never, string>> => {
-    try {
-      await invoke("delete_page", { pageId });
-      // console.log("delete is called and tried")
-    } catch (err) {
-      // console.log("delete is called and cathced err", err)
-      return Result.Err(err);
-    }
-  };
+    return invokeSafe("create_new_snapshot_of_page", {
+      pageMeta: updatedPageMeta,
+      snapshot
+    })
+  }
 
-  const loadPages = async (): Promise<Result<VersionedPage[], string>> => {
-    try {
-      const value = await invoke<VersionedPage[]>("load_all_pages");
-      return Result.Ok(value);
-    } catch (error) {
-      return Result.Err(error);
-    }
-  };
-  const reloadPage = async (id: string): Promise<Result<VersionedPage>> => {
-    try {
-      const value = await invoke<VersionedPage>("load_page_details", {
-        pageId: id,
-      });
-      return Result.Ok(value);
-    } catch (error) {
-      return Result.Err(error instanceof Error ? error.message : String(error));
-    }
-  };
+  const deletePage = (pageId: string) =>
+    invokeSafe<void>("delete_page", { pageId })
 
-  const upsertTagOnPage = async (
+  const loadPages = () =>
+    invokeSafe<VersionedPage[]>("load_all_pages")
+
+  const reloadPage = (pageId: string) =>
+    invokeSafe<VersionedPage>("load_page_details", { pageId })
+
+  const upsertTagOnPage = (
     pageId: string,
-    tagId: string,
-  ): Promise<Result<PageMeta, unknown>> => {
-    try {
-      const res = await invoke<PageMeta>("upsert_tag_on_page", {
-        pageId: pageId,
-        tagId: tagId,
-      });
-      return Result.Ok(res);
-    } catch (err) {
-      return Result.Err(err);
-    }
-  };
+    tagId: string
+  ) =>
+    invokeSafe<PageMeta>("upsert_tag_on_page", { pageId, tagId })
 
-  const deleteTagFromPage = async (
+  const deleteTagFromPage = (
     pageId: string,
-    tagId: string,
-  ): Promise<Result<PageMeta>> => {
-    try {
-      const res = await invoke<PageMeta>("delete_tag_from_page", {
-        pageId: pageId,
-        tagId: tagId,
-      });
-      return Result.Ok(res);
-    } catch (error) {
-      return Result.Err(error);
-    }
-  };
+    tagId: string
+  ) =>
+    invokeSafe<PageMeta>("delete_tag_from_page", { pageId, tagId })
 
   return {
     createPage,
+    createPageWithInitialSnapshot,
     createNewSnapshotOfPage,
     deletePage,
-    upsertTagOnPage,
-    deleteTagFromPage,
     loadPages,
     reloadPage,
-  };
-};
+    upsertTagOnPage,
+    deleteTagFromPage
+  }
+}
