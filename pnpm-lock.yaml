@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@reiwuzen/blocky':
-        specifier: ^1.3.4
-        version: 1.3.4(@reiwuzen/result@1.2.0)
+        specifier: ^1.4.8
+        version: 1.4.8(@reiwuzen/result@1.2.0)
       '@reiwuzen/blocky-react':
-        specifier: ^1.2.1
-        version: 1.2.1(@reiwuzen/result@1.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        specifier: ^1.3.1
+        version: 1.3.1(@reiwuzen/result@1.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@reiwuzen/result':
         specifier: ^1.2.0
         version: 1.2.0
@@ -495,15 +495,15 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@reiwuzen/blocky-react@1.2.1':
-    resolution: {integrity: sha512-sORqO+nD7J0AJpywGQCNpqv1/TYeSPV2rdd2RMbvTPoyAteQgDwa82jtrrRJfeR/T4D8dHTuk9Qhtibj1PSxdA==}
+  '@reiwuzen/blocky-react@1.3.1':
+    resolution: {integrity: sha512-H3S8sOpICzPxOHFtysn3SayRCNxoGJaFYJ+TbaPNNml9hvgDUbP+Eyzo/iiX0dRFQ++PxGCQU3PmdZBQzfzCVQ==}
     engines: {node: '>=18'}
     peerDependencies:
       react: '>=18'
       react-dom: '>=18'
 
-  '@reiwuzen/blocky@1.3.4':
-    resolution: {integrity: sha512-1BKNXyLYCgADuGkjCuzXW4HsXwBxXOS76iW5370/PnJ1A/kwYT3JX4pCl2WUgb4coYEqPpS2iIwpOTAz/aHQUQ==}
+  '@reiwuzen/blocky@1.4.8':
+    resolution: {integrity: sha512-9xgClbCIS09CdU6l6B90TClbwPnNbVP0s0efqK3O4xWFzJF2mPiShop5tRVRSPsweE6Wg2qKClZeSWctJhq2jw==}
     engines: {node: '>=18'}
     peerDependencies:
       '@reiwuzen/result': ^1.0.1
@@ -2311,15 +2311,15 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
-  '@reiwuzen/blocky-react@1.2.1(@reiwuzen/result@1.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@reiwuzen/blocky-react@1.3.1(@reiwuzen/result@1.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@reiwuzen/blocky': 1.3.4(@reiwuzen/result@1.2.0)
+      '@reiwuzen/blocky': 1.4.8(@reiwuzen/result@1.2.0)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
     transitivePeerDependencies:
       - '@reiwuzen/result'
 
-  '@reiwuzen/blocky@1.3.4(@reiwuzen/result@1.2.0)':
+  '@reiwuzen/blocky@1.4.8(@reiwuzen/result@1.2.0)':
     dependencies:
       '@reiwuzen/result': 1.2.0
       uuid: 13.0.0
