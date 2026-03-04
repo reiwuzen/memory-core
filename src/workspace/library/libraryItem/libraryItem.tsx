@@ -1,34 +1,54 @@
 import { useActiveTab } from "@/hooks/useActiveTab";
 import "./libraryItem.scss";
 import "@reiwuzen/blocky-react/styles.css";
+
 import { useTags } from "@/hooks/useTag";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Editor,
-  type EditorHandle,
-} from "@reiwuzen/blocky-react";
+import { Editor, type EditorHandle } from "@reiwuzen/blocky-react";
 import { type AnyBlock } from "@reiwuzen/blocky";
 import { toast } from "sonner";
 
 import { useLibrary } from "@/hooks/useLibrary";
 import { Snapshot } from "@/types/snapshot";
-// import { areBlocksSemanticallyEqual } from "@/helper/compareTwoBlocks";
+import { normalizeVersionedPage } from "@/helper/normaliseVersionedPage";
 
 const LibraryItem = () => {
   const { pagesStore, pageActions } = useLibrary();
   const { setActiveTabView } = useActiveTab();
   const { tagsData } = useTags();
-  const { headSnapshot, pageMeta } = pagesStore.activePage;
-  const [showTagPicker, setShowTagPicker] = useState<boolean>(false);
-  const [editable, setEditable] = useState<boolean>(false);
+
+  const activePage = pagesStore.activePage;
+  console.log(activePage);
+  const { pageMeta, normalizedSnapshots } = activePage;
+
+  const { byId, ids } = normalizedSnapshots;
+
   const editorRef = useRef<EditorHandle>(null);
-
-  //local
-  const [viewSnapshot, setViewSnapshot] = useState<Snapshot>(headSnapshot);
-  const [showSnapshotsList, setShowSnapshotsList] = useState<boolean>(false);
-
   const addTagBtnRef = useRef<HTMLButtonElement>(null);
   const tagPickerRef = useRef<HTMLDivElement>(null);
+
+  const [editable, setEditable] = useState(false);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [showSnapshotsList, setShowSnapshotsList] = useState(false);
+
+  const headSnapshot = useMemo(
+    () =>
+      pageMeta.headSnapshotId ? byId.get(pageMeta.headSnapshotId) : undefined,
+    [pageMeta.headSnapshotId, byId],
+  );
+
+  const [viewSnapshot, setViewSnapshot] = useState<Snapshot | null>(
+    headSnapshot ?? byId.get(ids[0]) ?? null,
+  );
+
+  useEffect(() => {
+    setViewSnapshot(headSnapshot ?? byId.get(ids[0]) ?? null);
+  }, [headSnapshot, byId, ids]);
+
+  const parsedBlocks = useMemo(() => {
+    if (!viewSnapshot) return undefined;
+    return JSON.parse(viewSnapshot.contentJson) as AnyBlock[];
+  }, [viewSnapshot]);
 
   const pageTagIds = useMemo(() => new Set(pageMeta.tags), [pageMeta.tags]);
 
@@ -43,47 +63,49 @@ const LibraryItem = () => {
   );
 
   useEffect(() => {
-  setViewSnapshot(headSnapshot);
-}, [headSnapshot.id]);
-
-  useEffect(() => {
     const handleTagPicker = (e: MouseEvent) => {
       if (
         tagPickerRef.current &&
         !tagPickerRef.current.contains(e.target as Node) &&
-        !addTagBtnRef.current.contains(e.target as Node)
-      )
+        !addTagBtnRef.current?.contains(e.target as Node)
+      ) {
         setShowTagPicker(false);
+      }
     };
 
     document.addEventListener("mousedown", handleTagPicker);
+
     return () => {
       setEditable(false);
       document.removeEventListener("mousedown", handleTagPicker);
     };
-  }, [showTagPicker]);
+  }, []);
 
-  const saveSnapshot = async (): Promise<void> => {
-    const freshBlocks = editorRef.current?.serialize();
+  const saveSnapshot = async () => {
+    const blocks = editorRef.current?.serialize();
+    if (!blocks) throw new Error("Editor not ready");
 
-    if (!freshBlocks) {
-      throw new Error("Editor not ready");
-    }
     setEditable(false);
-    (await pageActions.page.createNewSnapshot(
-      pagesStore.activePage.pageMeta,
-      JSON.stringify(freshBlocks),
-    )).match(
-      (vp)=>pageActions.activePage.set(vp),
-      err => {throw err}
+
+    const res = await pageActions.page.createNewSnapshot(
+      pageMeta,
+      JSON.stringify(blocks),
+    );
+
+    res.match(
+      (vp) => pageActions.activePage.set(normalizeVersionedPage(vp)),
+      (err) => {
+        throw err;
+      },
     );
   };
 
   const deleteAndExit = async () => {
-    const res = await pageActions.page.delete(headSnapshot.pageId);
+    const res = await pageActions.page.delete(pageMeta.id);
 
-    if (res.ok !== true) {
-      throw new Error(res.error ?? "Failed to delete memory Item");
+    if (!res.ok) {
+      const err = res.error ? String(res.error) : "Failed to delete page";
+      throw new Error(err);
     }
 
     setActiveTabView("list");
@@ -97,7 +119,6 @@ const LibraryItem = () => {
             className="page-snapshot-edit-btn"
             onClick={(e) => {
               e.stopPropagation();
-              // e.preventDefault();
               setEditable(true);
             }}
           >
@@ -117,13 +138,13 @@ const LibraryItem = () => {
         ) : (
           <button
             className="page-snapshot-save-btn"
-            onClick={async () => {
+            onClick={() =>
               toast.promise(saveSnapshot(), {
                 loading: "Saving node",
                 success: "Node saved successfully",
                 error: (err) => `Failed to save: ${err}`,
-              });
-            }}
+              })
+            }
           >
             <svg
               width="800px"
@@ -142,13 +163,15 @@ const LibraryItem = () => {
             </svg>
           </button>
         )}
+
         <button
           className="page-snapshot-delete-btn"
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
+
             toast.promise(deleteAndExit(), {
               loading: "Deleting...",
-              success: "Delete successfully",
+              success: "Deleted successfully",
               error: (e) => e.message,
             });
           }}
@@ -170,49 +193,69 @@ const LibraryItem = () => {
             <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
           </svg>
         </button>
+
         <button
           className="page-snapshot-view-btn"
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
-            setShowSnapshotsList((p) => !p);
+            setShowSnapshotsList((v) => !v);
           }}
         >
-          Snapshots
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+          fill="currentColor"
+            color="black"
+            stroke="currentColor">
+            <path
+              d="M83.4,16.6c-6.8,0-12.4,5.3-13,12c-4,0.3-8.1,2.5-10.7,5.1c-2.4,2.4-4,5.4-4.8,8.2c-1.3-0.8-2.8-1.3-4.5-1.3
+    c-3,0-5.6,1.5-7.2,3.9V16.6C43.2,9.7,37.6,4,30.7,4c-6.9,0-12.5,5.6-12.5,12.5c0,6.7,5.3,12.2,12,12.5v42.2c-6.7,0.3-12,5.8-12,12.5
+    c0,6.9,5.6,12.5,12.5,12.5c6.9,0,12.5-5.6,12.5-12.5c0-4-1.9-7.5-4.8-9.8c0.7-3.1,2.2-6.2,4.8-8.9c3.9-3.9,9.4-6.4,14.8-6.6
+    c0.6,6.5,6.1,11.5,12.8,11.5c7.1,0,12.9-5.8,12.9-12.9C96.3,22.4,90.5,16.6,83.4,16.6z"
+            />
+          </svg>
         </button>
+
         {showSnapshotsList && (
           <div className="snapshots">
             <div className="snapshots__header">
               <span>View Snapshots</span>
             </div>
+
             <ul className="snapshots__list">
-              {pagesStore.activePage.snapshots.map((s) => (
-                <li
-                  key={s.id}
-                  className={`${s.id === viewSnapshot.id ? "active" : ""}`}
-                  onClick={() => {
-                    setViewSnapshot(s);
-                    setShowSnapshotsList(false);
-                  }}
-                >
-                  <span>{s?.comment}</span>
-                  <time>{new Date(s.createdAt).toLocaleString()}</time>
-                  <span>{headSnapshot.id === s.id ? "head" : ""}</span>
-                </li>
-              ))}
+              {ids.map((id) => {
+                const s = byId.get(id);
+                if (!s) return null;
+
+                return (
+                  <li
+                    key={s.id}
+                    className={s.id === viewSnapshot?.id ? "active" : ""}
+                    onClick={() => {
+                      setViewSnapshot(s);
+                      setShowSnapshotsList(false);
+                    }}
+                  >
+                    <span>{s.comment}</span>
+                    <time>{new Date(s.createdAt).toLocaleString()}</time>
+                    {headSnapshot?.id === s.id && <span>head</span>}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
+
         <button
           ref={addTagBtnRef}
           className="page-snapshot-add_tag-btn"
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
             setShowTagPicker((p) => !p);
           }}
         >
           Add Tag
         </button>
-        {!!showTagPicker && (
+
+        {showTagPicker && (
           <div ref={tagPickerRef} className="tag-picker">
             <div className="tag-picker__header">
               <span>Tags</span>
@@ -228,21 +271,20 @@ const LibraryItem = () => {
                   key={t.id}
                   className="tag-picker__item"
                   onClick={async () => {
-                    await (
-                      await pageActions.page.addTag(
-                        pagesStore.activePage.pageMeta.id,
-                        t.id,
-                      )
-                    ).match(
-                      (pageMeta) => {
-                        pageActions.activePage.set({
-                          pageMeta,
-                          snapshots: pagesStore.activePage.snapshots,
-                          headSnapshot: pagesStore.activePage.headSnapshot,
-                        });
-                      },
-                      (error) => console.log(`[TagNotAdded]: ${error}`),
+                    const res = await pageActions.page.addTag(
+                      pageMeta.id,
+                      t.id,
                     );
+
+                    res.match(
+                      (updatedMeta) =>
+                        pageActions.activePage.set({
+                          pageMeta: updatedMeta,
+                          normalizedSnapshots,
+                        }),
+                      (err) => console.error("[TagNotAdded]", err),
+                    );
+
                     setShowTagPicker(false);
                   }}
                 >
@@ -260,28 +302,31 @@ const LibraryItem = () => {
         <div className="page-snapshot__timestamp">
           <div>
             <span className="label">Page created</span>
-            <time dateTime={pagesStore.activePage.pageMeta.createdAt}>
-              {new Date(
-                pagesStore.activePage.pageMeta.createdAt,
-              ).toLocaleString()}
+            <time dateTime={pageMeta.createdAt}>
+              {new Date(pageMeta.createdAt).toLocaleString()}
             </time>
           </div>
 
-          <div>
-            <span className="label">Page updated</span>
-            <time dateTime={headSnapshot.createdAt}>
-              {new Date(headSnapshot.createdAt).toLocaleString()}
-            </time>
-          </div>
+          {headSnapshot && (
+            <div>
+              <span className="label">Page updated</span>
+              <time dateTime={headSnapshot.createdAt}>
+                {new Date(headSnapshot.createdAt).toLocaleString()}
+              </time>
+            </div>
+          )}
 
-          <div>
-            <span className="label">Snapshot created</span>
-            <time dateTime={viewSnapshot.createdAt}>
-              {new Date(viewSnapshot.createdAt).toLocaleString()}
-            </time>
-          </div>
+          {viewSnapshot && (
+            <div>
+              <span className="label">Snapshot created</span>
+              <time dateTime={viewSnapshot.createdAt}>
+                {new Date(viewSnapshot.createdAt).toLocaleString()}
+              </time>
+            </div>
+          )}
         </div>
       </header>
+
       <ul className="page-snapshot__tags">
         {assignedTags.length > 0 ? (
           assignedTags.map((t) => (
@@ -293,18 +338,14 @@ const LibraryItem = () => {
           <li className="no-tags">No Tags available</li>
         )}
       </ul>
-      <section
-        className="page-snapshot__content"
-        // onClick={()=>{}}
-      >
-        {
-          <Editor
-            key={viewSnapshot.id}
-            ref={editorRef}
-            initialBlocks={JSON.parse(viewSnapshot.contentJson) as AnyBlock[]}
-            editable={editable}
-          />
-        }
+
+      <section className="page-snapshot__content">
+        <Editor
+          key={viewSnapshot?.id ?? ""}
+          ref={editorRef}
+          initialBlocks={parsedBlocks}
+          editable={editable}
+        />
       </section>
     </article>
   );
