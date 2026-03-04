@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
-    schema::{Book, MemoryItem, MemoryNode, MemoryPayload, PageMeta, VersionedPage, Snapshot, Tag},
+    schema::{Book, PageMeta, VersionedPage, Snapshot, Tag}, 
     utils::get_app_dir,
 };
 use tauri::{
@@ -105,9 +105,9 @@ pub fn page_store_dir(app: AppHandle) -> Result<PathBuf, String> {
 ///
 /// - The function performs integrity checks: each snapshot's `page_id`
 ///   must match its parent page's `id`.
-/// - Each page must have a `head_snapshot` identified by `head_snapshot_id`.
-/// - If the head snapshot is missing, the entire page is treated as invalid
-///   and an error is returned.
+/// - If `head_snapshot_id` is set, a matching snapshot must exist.
+/// - If the head snapshot is referenced but missing, the entire page is
+///   treated as invalid and an error is returned.
 ///
 /// # Return Behavior
 ///
@@ -170,11 +170,10 @@ pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
         let page_meta: PageMeta = serde_json::from_str(&page_json_str)
             .map_err(|e| format!("Invalid page.json in {:?}: {}", page_json_path, e))?;
 
-        /* ─────────────────── load nodes ─────────────────── */
+        /* ─────────────────── load snapshots ─────────────────── */
 
         let snapshots_dir = page_dir.join("snapshots");
         let mut snapshots = Vec::new();
-        let mut head_snapshot: Option<Snapshot> = None;
 
         if snapshots_dir.exists() {
             let snapshots_entries = std::fs::read_dir(&snapshots_dir)
@@ -212,25 +211,23 @@ pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
                     ));
                 }
 
-                if snapshot.id == page_meta.head_snapshot_id {
-                    head_snapshot = Some(snapshot.clone());
-                }
-
                 snapshots.push(snapshot);
             }
         }
 
-        let head_snapshot = head_snapshot.ok_or_else(|| {
-            format!(
-                "Active node '{}' not found for memory '{}'",
-                page_meta.head_snapshot_id, page_meta.id
-            )
-        })?;
+        // If head_snapshot_id is set, verify it resolves to an existing snapshot
+        if let Some(ref head_id) = page_meta.head_snapshot_id {
+            if !snapshots.iter().any(|s| &s.id == head_id) {
+                return Err(format!(
+                    "Active node '{}' not found for memory '{}'",
+                    head_id, page_meta.id
+                ));
+            }
+        }
 
         result.push(VersionedPage {
             page_meta,
             snapshots,
-            head_snapshot,
         });
     }
 
@@ -267,7 +264,7 @@ pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
 /// - The page directory must exist; if not, `Err` is returned.
 /// - Both `page.json` and `snapshots/` directory must exist.
 /// - Each snapshot's `page_id` field must match the requested `page_id`.
-/// - A head snapshot (identified by `page_meta.head_snapshot_id`) must exist.
+/// - If `head_snapshot_id` is set, a matching snapshot must exist.
 ///
 /// # Parameters
 ///
@@ -286,7 +283,7 @@ pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
 /// - The page directory does not exist.
 /// - `page.json` or `snapshots/` directory is missing.
 /// - Metadata files are malformed or unreadable.
-/// - The head snapshot does not exist.
+/// - The head snapshot is referenced but does not exist.
 /// - A snapshot's `page_id` does not match the parent page's `id` (invariant violation).
 ///
 /// # Examples
@@ -295,7 +292,6 @@ pub fn load_all_pages(app: AppHandle) -> Result<Vec<VersionedPage>, String> {
 /// let page = load_page_details(app, "page_123".to_string())?;
 /// println!("Page title: {}", page.page_meta.title);
 /// println!("Total snapshots: {}", page.snapshots.len());
-/// println!("Current snapshot: {}", page.head_snapshot.id);
 /// ```
 #[command]
 pub fn load_page_details(app: AppHandle, page_id: String) -> Result<VersionedPage, String> {
@@ -331,7 +327,6 @@ pub fn load_page_details(app: AppHandle, page_id: String) -> Result<VersionedPag
     }
 
     let mut snapshots = Vec::new();
-    let mut head_snapshot: Option<Snapshot> = None;
 
     let snapshots_entries = std::fs::read_dir(&snapshots_dir)
         .map_err(|e| format!("Failed to read snapshots dir {:?}: {}", snapshots_dir, e))?;
@@ -363,27 +358,146 @@ pub fn load_page_details(app: AppHandle, page_id: String) -> Result<VersionedPag
             ));
         }
 
-        if snapshot.id == page_meta.head_snapshot_id {
-            head_snapshot = Some(snapshot.clone());
-        }
-
         snapshots.push(snapshot);
     }
 
-    let head_snapshot = head_snapshot.ok_or_else(|| {
-        format!(
-            "Active snapshot '{}' not found for memory '{}'",
-            page_meta.head_snapshot_id, page_id
-        )
-    })?;
+    // If head_snapshot_id is set, verify it resolves to an existing snapshot
+    if let Some(ref head_id) = page_meta.head_snapshot_id {
+        if !snapshots.iter().any(|s| &s.id == head_id) {
+            return Err(format!(
+                "Active snapshot '{}' not found for memory '{}'",
+                head_id, page_id
+            ));
+        }
+    }
 
     Ok(VersionedPage {
         page_meta,
-        head_snapshot,
         snapshots,
     })
 }
 
+
+/// Creates a new empty `Page` with no snapshots, persisted atomically.
+///
+/// # Overview
+///
+/// `create_page` is a **strict, non-idempotent constructor** for a `Page`
+/// that has no snapshots yet. It persists only the page metadata using a
+/// staging directory followed by a single atomic rename.
+///
+/// The `page.id` is treated as a **strong, immutable identity**.
+/// If a page with the same id already exists, the function fails
+/// and performs no overwrite.
+///
+/// `page_meta.head_snapshot_id` is expected to be `None` on entry and will
+/// remain `None` in the persisted file — no snapshot is created.
+///
+/// # Persistence Model
+///
+/// Data is written to a staging directory first:
+///
+/// ```text
+/// page_store/
+/// ├─ .staging/
+/// │  └─ {page_id}/
+/// │     ├─ page.json
+/// │     └─ snapshots/     <- empty, created for consistency
+/// ```
+///
+/// After all writes succeed, the staging directory is atomically renamed to:
+///
+/// ```text
+/// page_store/{page_id}/
+/// ```
+///
+/// This guarantees that callers never observe a partially written page
+/// at its final location.
+///
+/// # Identity & Idempotency
+///
+/// - `page_meta.id` is a unique, immutable identifier.
+/// - This function is **not idempotent**.
+/// - If `page_store/{page_id}` already exists, the function returns `Err`
+///   and performs no overwrite.
+///
+/// # Failure Guarantees
+///
+/// - If serialization fails, nothing is written.
+/// - If any filesystem operation fails before commit, the final page
+///   directory is untouched.
+/// - On error, partial data may exist only under `.staging/{page_id}`.
+///
+/// # Parameters
+///
+/// - `app`: Application handle used to resolve the page store directory.
+/// - `page_meta`: Page metadata to persist as `page.json`.
+///   `head_snapshot_id` should be `None`.
+///
+/// # Returns
+///
+/// - `Ok(VersionedPage)` with the newly created page and an empty snapshot list.
+/// - `Err(String)` if serialization, filesystem operations, or identity
+///   invariants fail.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let page_meta = PageMeta {
+///     id: "page_1".to_string(),
+///     title: "My New Page".to_string(),
+///     head_snapshot_id: None,
+///     ..Default::default()
+/// };
+/// let versioned_page = create_page(app, page_meta)?;
+/// assert!(versioned_page.snapshots.is_empty());
+/// ```
+#[command]
+pub fn create_page(app: AppHandle, page_meta: PageMeta) -> Result<VersionedPage, String> {
+    use std::fs;
+
+    let page_store_dir = page_store_dir(app.clone())?;
+
+    let staging_page_path = page_store_dir.join(".staging").join(&page_meta.id);
+
+    if staging_page_path.exists() {
+        fs::remove_dir_all(&staging_page_path)
+            .map_err(|e| format!("Failed to delete .staging/{{page_id}}: {}", e))?;
+    }
+    fs::create_dir_all(&staging_page_path)
+        .map_err(|e| format!("Failed to create .staging/{{page_id}}: {}", e))?;
+
+    // Create empty snapshots dir for a consistent on-disk layout
+    fs::create_dir_all(staging_page_path.join("snapshots"))
+        .map_err(|e| format!("Failed to create snapshots dir in staging: {}", e))?;
+
+    let page_json = serde_json::to_string_pretty(&page_meta)
+        .map_err(|e| format!("Failed to serialize page metadata: {}", e))?;
+
+    fs::write(staging_page_path.join("page.json"), &page_json)
+        .map_err(|e| format!("Failed to write page.json in staging: {}", e))?;
+
+    let page_path = page_store_dir.join(&page_meta.id);
+
+    if page_path.exists() {
+        return Err(format!(
+            "Page '{}' already exists; create_page is not idempotent",
+            page_meta.id
+        ));
+    }
+
+    fs::rename(&staging_page_path, &page_path).map_err(|e| {
+        format!(
+            "Failed to rename from {:#?} to {:#?}: {}",
+            staging_page_path, page_path, e
+        )
+    })?;
+
+    let page = load_page_details(app, page_meta.id)
+        .map_err(|e| format!("Failed to load page details: {}", e))?;
+
+    Ok(page)
+}
 
 /// Creates a new `Page` with its initial `Snapshot`, persisted atomically.
 ///
@@ -475,6 +589,7 @@ pub fn load_page_details(app: AppHandle, page_id: String) -> Result<VersionedPag
 /// let page_meta = PageMeta {
 ///     id: "page_1".to_string(),
 ///     title: "My First Page".to_string(),
+///     head_snapshot_id: Some("snapshot_1".to_string()),
 ///     ..Default::default()
 /// };
 /// let snapshot = Snapshot {
@@ -645,8 +760,8 @@ pub fn create_page_with_initial_snapshot(
 /// # Parameters
 ///
 /// - `app`: Application handle used to resolve the page store directory.
-/// - `page_meta`: The metadata of the parent page. The `head_snapshot_id`
-///   should be updated to the new snapshot's ID if you want it to become active.
+/// - `page_meta`: The metadata of the parent page. Set `head_snapshot_id`
+///   to `Some(new_snapshot_id)` to make this snapshot the active head.
 /// - `snapshot`: The snapshot to be created and persisted, including metadata
 ///   and `content_json`.
 ///
@@ -662,15 +777,6 @@ pub fn create_page_with_initial_snapshot(
 /// - The caller should ensure `snapshot.page_id == page_meta.id`.
 /// - The snapshot ID must be unique within the page.
 ///
-/// # Notes
-///
-/// - This function does not validate the existence or integrity of the parent
-///   page beyond filesystem layout expectations.
-/// - Cleanup of stale `.staging` directories is performed at the beginning
-///   of each operation.
-/// - The page metadata must be valid JSON; if not, the update fails with
-///   an appropriate error.
-///
 /// # Panics
 ///
 /// This function does not panic. All errors are returned as `Err(String)`.
@@ -679,7 +785,7 @@ pub fn create_page_with_initial_snapshot(
 ///
 /// ```rust,ignore
 /// let mut page_meta = existing_page.page_meta.clone();
-/// page_meta.head_snapshot_id = "snapshot_2".to_string();
+/// page_meta.head_snapshot_id = Some("snapshot_2".to_string());
 ///
 /// let new_snapshot = Snapshot {
 ///     id: "snapshot_2".to_string(),
