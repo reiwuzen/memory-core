@@ -1,3 +1,6 @@
+@import "./styles/themes.css";
+@import "./components/ui/ui.scss";
+
 * {
   margin: 0;
   padding: 0;
@@ -11,8 +14,8 @@
   line-height: 24px;
   font-weight: 400;
 
-  color: #0f0f0f;
-  background-color: white;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,10 +25,22 @@
 }
 
 #root {
-  background-color: rgb(255, 255, 255);
-  color: black;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   // min-height: 100vh;
   // min-width: 100vw;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .container{

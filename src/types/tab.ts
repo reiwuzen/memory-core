@@ -35,7 +35,7 @@ export type TabViewMap = {
   library: "list" | "detail";
   create: "picker" | "form";
   structure: 'add' | 'list' | 'details';
-  calender: 'calender'
+  calendar: 'calendar'
   // settings: | "general"
   // | "memory"
   // | "privacy"

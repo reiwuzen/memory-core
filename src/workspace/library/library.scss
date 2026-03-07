@@ -1,4 +1,17 @@
 .library{
   height: 100%;
   width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  background: var(--bg-primary);
+}
+
+.library > * {
+  flex: 1;
+  width: 100%;
+  margin-left: 0;
+  min-width: 0;
+  min-height: 0;
 }

@@ -16,27 +16,27 @@
 
     display: flex;
 
-    background: #070a10;
-    color: #e6edf3;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 
     border-radius: 14px;
     overflow: hidden;
 
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 30px 80px var(--shadow-color);
 
     pointer-events: all;
     .settings__panel {
       flex: 1;
       padding: 40px;
       overflow-y: auto;
-      background: #0b111b;
+      background: var(--bg-secondary);
 
       &::-webkit-scrollbar {
         width: 4px;
       }
 
       &::-webkit-scrollbar-thumb {
-        background: #2a2f38;
+        background: var(--scrollbar-color);
         border-radius: 10px;
       }
     }
@@ -44,8 +44,8 @@
       width: 260px;
       padding: 28px 20px;
 
-      background: linear-gradient(180deg, #0b0f18 0%, #06090f 100%);
-      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+      border-right: 1px solid var(--border-color);
 
       display: flex;
       flex-direction: column;
@@ -68,7 +68,7 @@
         border: none;
         border-radius: 8px;
 
-        color: #9aa7b3;
+        color: var(--text-tertiary);
         font-size: 14px;
 
         text-align: left;
@@ -78,8 +78,8 @@
       }
 
       nav button:hover {
-        background: rgba(255, 255, 255, 0.04);
-        color: #ffffff;
+        background: var(--border-color);
+        color: var(--text-primary);
       }
 
       nav button.active {
@@ -89,10 +89,10 @@
           rgba(40, 50, 80, 0.4)
         );
 
-        color: #ffffff;
+        color: var(--text-primary);
         font-weight: 500;
 
-        box-shadow: inset 2px 0 0 #4f7cff; // left highlight bar
+        box-shadow: inset 2px 0 0 var(--accent-primary); // left highlight bar
       }
     }
   }
