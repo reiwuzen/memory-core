@@ -50,7 +50,7 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
           >
             <button
               type="button"
-              className="custom-select-trigger"
+              className={`custom-select-trigger ${open ? "open" : ""}`}
               disabled={selectedTemplate.id !== "generic"}
               onClick={() => setOpen((prev) => !prev)}
             >

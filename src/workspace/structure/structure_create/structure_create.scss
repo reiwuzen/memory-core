@@ -94,8 +94,6 @@
 /* ================= BUTTON ================= */
 
 .structure_create button {
-  margin-top: 12px;
-
   background: var(--accent-primary);
   border: none;
 
@@ -116,4 +114,15 @@
 .structure_create button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.structure_create_actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.structure_create .ghost {
+  background: var(--surface-2);
 }

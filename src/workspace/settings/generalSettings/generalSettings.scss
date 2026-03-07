@@ -68,8 +68,12 @@
     border-radius: 8px;
     border: none;
 
-    background: var(--accent-secondary);
-    color: var(--text-primary);
+    background: linear-gradient(
+      135deg,
+      var(--brand-grad-start, var(--accent-primary)),
+      var(--brand-grad-end, var(--accent-secondary))
+    );
+    color: var(--accent-contrast);
 
     font-size: 13px;
     font-weight: 500;
@@ -78,8 +82,21 @@
     transition: all 0.2s ease;
   }
 
+  select {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
   button:hover {
-    background: var(--accent-primary);
+    background: linear-gradient(
+      135deg,
+      var(--brand-grad-alt-start, var(--brand-grad-start, var(--accent-primary))),
+      var(--brand-grad-alt-end, var(--brand-grad-end, var(--accent-secondary)))
+    );
     transform: translateY(-1px);
   }
 
@@ -113,7 +130,8 @@
   .slider {
     position: absolute;
     inset: 0;
-    background-color: var(--accent-secondary);
+    background-color: var(--surface-3);
+    border: 1px solid var(--border-color);
     border-radius: 30px;
     transition: 0.3s;
   }

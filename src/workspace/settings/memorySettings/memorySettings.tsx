@@ -1,15 +1,8 @@
-import { useState } from "react";
 import "./memorySettings.scss";
 import { useSettings } from "@/hooks/useSettings";
-import { MemoryView } from "@/types/settings";
+import { MemoryView, TimelineGroupBy, VersionTrackingLevel } from "@/types/settings";
 const MemorySettings = () => {
   const { settingsData, settingsAction } = useSettings();
-  const [autoCreateNode, setAutoCreateNode] = useState(true);
-  const [autoLink, setAutoLink] = useState(true);
-  const [autoTag, setAutoTag] = useState(false);
-  const [versionLevel, setVersionLevel] = useState("Standard");
-  const [timelineGroup, setTimelineGroup] = useState("Day");
-  const [showTimestamp, setShowTimestamp] = useState(true);
 
   return (
     <div className="settings__section">
@@ -36,8 +29,8 @@ const MemorySettings = () => {
           <span>Auto-create node on entry</span>
           <input
             type="checkbox"
-            checked={autoCreateNode}
-            onChange={() => setAutoCreateNode(!autoCreateNode)}
+            checked={settingsData.autoCreateNode}
+            onChange={settingsAction.autoCreateNode.toggle}
           />
         </label>
       </div>
@@ -49,8 +42,8 @@ const MemorySettings = () => {
           <span>Auto link related memories</span>
           <input
             type="checkbox"
-            checked={autoLink}
-            onChange={() => setAutoLink(!autoLink)}
+            checked={settingsData.autoLinkRelated}
+            onChange={settingsAction.autoLinkRelated.toggle}
           />
         </label>
 
@@ -58,20 +51,20 @@ const MemorySettings = () => {
           <span>Generate tags automatically</span>
           <input
             type="checkbox"
-            checked={autoTag}
-            onChange={() => setAutoTag(!autoTag)}
+            checked={settingsData.autoGenerateTags}
+            onChange={settingsAction.autoGenerateTags.toggle}
           />
         </label>
 
         <label className="setting">
           <span>Version tracking level</span>
           <select
-            value={versionLevel}
-            onChange={(e) => setVersionLevel(e.target.value)}
+            value={settingsData.versionTrackingLevel}
+            onChange={(e) => settingsAction.versionTrackingLevel.set(e.target.value as VersionTrackingLevel)}
           >
-            <option>Minimal</option>
-            <option>Standard</option>
-            <option>Full History</option>
+            <option value="minimal">Minimal</option>
+            <option value="standard">Standard</option>
+            <option value="full">Full History</option>
           </select>
         </label>
       </div>
@@ -82,12 +75,12 @@ const MemorySettings = () => {
         <label className="setting">
           <span>Group timeline by</span>
           <select
-            value={timelineGroup}
-            onChange={(e) => setTimelineGroup(e.target.value)}
+            value={settingsData.timelineGroupBy}
+            onChange={(e) => settingsAction.timelineGroupBy.set(e.target.value as TimelineGroupBy)}
           >
-            <option>Day</option>
-            <option>Week</option>
-            <option>Month</option>
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
           </select>
         </label>
 
@@ -95,8 +88,8 @@ const MemorySettings = () => {
           <span>Show timestamps</span>
           <input
             type="checkbox"
-            checked={showTimestamp}
-            onChange={() => setShowTimestamp(!showTimestamp)}
+            checked={settingsData.showTimestamps}
+            onChange={settingsAction.showTimestamps.toggle}
           />
         </label>
       </div>

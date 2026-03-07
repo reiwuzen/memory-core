@@ -4,9 +4,12 @@ import { useActiveTab } from "@/hooks/useActiveTab";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, EmptyState, Input } from "@/components/ui";
 import { rankPages } from "@/helper/rankPages";
+import { useSettings } from "@/hooks/useSettings";
+import { isNsfwPage } from "@/helper/isNsfwPage";
 
 const LibraryList = () => {
   const { pagesStore, pageActions } = useLibrary();
+  const { settingsData } = useSettings();
   const { setActiveTabTypeAndView } = useActiveTab();
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "updated" | "created" | "az">("priority");
@@ -21,7 +24,9 @@ const LibraryList = () => {
 
   const filteredPages = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const next = rankPages(pagesStore.pages).filter(({ page: { pageMeta } }) => {
+    const next = rankPages(pagesStore.pages).filter(({ page }) => {
+      if (!settingsData.nsfwContent && isNsfwPage(page)) return false;
+      const { pageMeta } = page;
       if (!q) return true;
       return (
         pageMeta.title.toLowerCase().includes(q) ||
@@ -49,7 +54,7 @@ const LibraryList = () => {
     });
 
     return next;
-  }, [pagesStore.pages, query, sortBy]);
+  }, [pagesStore.pages, query, settingsData.nsfwContent, sortBy]);
 
   const typeStats = useMemo(() => {
     return pagesStore.pages.reduce<Record<string, number>>((acc, { pageMeta }) => {

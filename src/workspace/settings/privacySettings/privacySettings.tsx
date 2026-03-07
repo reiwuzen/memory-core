@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./privacySettings.scss";
 import { useSettings } from "@/hooks/useSettings";
 import { toast } from "sonner";
 const PrivacySettings = () => {
 const {clearData , settingsData,settingsAction} = useSettings();
-  // const [localOnly, setLocalOnly] = useState(true);
-  const [aiAccess, setAiAccess] = useState(false);
-  const [autoBackup, setAutoBackup] = useState(true);
-  const [backupFrequency, setBackupFrequency] = useState("Daily");
+  const [storagePath, setStoragePath] = useState("Loading...");
+
+  useEffect(() => {
+    settingsAction.storage.getPath().then((res) => {
+      if (res.ok) setStoragePath(res.value);
+      else setStoragePath("Unavailable");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="settings_section">
@@ -32,7 +37,8 @@ const {clearData , settingsData,settingsAction} = useSettings();
           <input
             type="checkbox"
             checked={settingsData.analytics}
-            onChange={()=>settingsAction.analytics.toggle}
+            onChange={()=>settingsAction.analytics.toggle()}
+            disabled={settingsData.localOnlyMode}
           />
         </label>
 
@@ -40,10 +46,14 @@ const {clearData , settingsData,settingsAction} = useSettings();
           <span>Allow AI to analyze memories</span>
           <input
             type="checkbox"
-            checked={aiAccess}
-            onChange={()=>setAiAccess(!aiAccess)}
+            checked={settingsData.aiAnalysis}
+            onChange={settingsAction.aiAnalysis.toggle}
+            disabled={settingsData.localOnlyMode}
           />
         </label>
+        {settingsData.localOnlyMode ? (
+          <p className="setting-note">Local-only mode keeps analytics and AI analysis off.</p>
+        ) : null}
 
       </div>
 
@@ -52,41 +62,47 @@ const {clearData , settingsData,settingsAction} = useSettings();
         <h4>Storage</h4>
 
         <label className="setting">
-          <span>Memory storage location</span>
-          <button>Change Folder</button>
+          <span title={storagePath}>Memory storage location: {storagePath}</span>
+          <button onClick={() => {
+            toast.promise(settingsAction.storage.openFolder().then((res) => {
+              if (!res.ok) throw new Error(res.error);
+            }), {
+              loading: "Opening data folder...",
+              success: "Opened data folder",
+              error: (err) => String(err),
+            });
+          }}>Open Folder</button>
         </label>
 
         <label className="setting">
           <span>Enable automatic backups</span>
           <input
             type="checkbox"
-            checked={autoBackup}
-            onChange={()=>setAutoBackup(!autoBackup)}
+            checked={settingsData.autoBackup}
+            onChange={settingsAction.autoBackup.toggle}
           />
         </label>
 
         <label className="setting">
           <span>Backup frequency</span>
           <select
-            value={backupFrequency}
-            onChange={(e)=>setBackupFrequency(e.target.value)}
+            value={settingsData.backupFrequency}
+            onChange={(e)=>settingsAction.backupFrequency.set(e.target.value as "daily" | "weekly" | "manual")}
+            disabled={!settingsData.autoBackup}
           >
-            <option>Daily</option>
-            <option>Weekly</option>
-            <option>Manual</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="manual">Manual</option>
           </select>
-        </label>
-
-        <label className="setting">
-          <span>Cache</span>
-          <button>Clear Cache</button>
         </label>
 
         <label className="setting">
           <span>Data</span>
           <button onClick={(e)=>{
             e.stopPropagation()
-            toast.promise(clearData(),{
+            toast.promise(clearData().then((res) => {
+              if (!res.ok) throw new Error(res.error);
+            }),{
               loading: 'Clearing Data...',
               success: 'Cleared Data',
               error: e => String(e)

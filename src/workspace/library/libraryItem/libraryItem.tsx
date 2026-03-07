@@ -24,6 +24,15 @@ const flattenText = (value: unknown): string => {
   return "";
 };
 
+const blocksToText = (blocks?: AnyBlock[]) => {
+  if (!blocks) return "";
+  return blocks
+    .map((block) => flattenText((block as { content?: unknown }).content))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 const LibraryItem = () => {
   const { pagesStore, pageActions } = useLibrary();
   const { setActiveTabView } = useActiveTab();
@@ -43,6 +52,7 @@ const LibraryItem = () => {
   const lastSavedContentRef = useRef("");
 
   const [editable, setEditable] = useState(false);
+  const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [editorResetSeed, setEditorResetSeed] = useState(0);
   const [autosaveEnabled, setAutosaveEnabled] = useState(false);
   const [showTagPicker, setShowTagPicker] = useState(false);
@@ -68,12 +78,7 @@ const LibraryItem = () => {
   }, [viewSnapshot]);
 
   const contentText = useMemo(() => {
-    if (!parsedBlocks) return "";
-    return parsedBlocks
-      .map((block) => flattenText((block as { content?: unknown }).content))
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
+    return blocksToText(parsedBlocks);
   }, [parsedBlocks]);
 
   const wordCount = useMemo(() => {
@@ -118,6 +123,10 @@ const LibraryItem = () => {
   useEffect(() => {
     lastSavedContentRef.current = JSON.stringify(parsedBlocks ?? []);
   }, [parsedBlocks, viewSnapshot?.id]);
+
+  useEffect(() => {
+    setIsEditorEmpty(!contentText);
+  }, [contentText, viewSnapshot?.id]);
 
   const saveSnapshot = useCallback(async (options?: { exitEdit?: boolean; content?: string }) => {
     if (isSavingRef.current) return false;
@@ -226,14 +235,21 @@ const LibraryItem = () => {
   }, []);
 
   const handleEditorInput = useCallback(() => {
-    if (!editable || !autosaveEnabled) return;
+    if (!editable) return;
+
+    const blocks = editorRef.current?.serialize();
+    if (blocks) {
+      setIsEditorEmpty(!blocksToText(blocks as AnyBlock[]));
+    }
+
+    if (!autosaveEnabled) return;
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
 
     autosaveTimerRef.current = setTimeout(async () => {
-      const blocks = editorRef.current?.serialize();
-      if (!blocks) return;
+      const liveBlocks = editorRef.current?.serialize();
+      if (!liveBlocks) return;
 
-      const content = JSON.stringify(blocks);
+      const content = JSON.stringify(liveBlocks);
 
       try {
         await saveSnapshot({ exitEdit: false, content });
@@ -490,8 +506,9 @@ const LibraryItem = () => {
       </ul>
 
       <section
-        className={`page-snapshot__content ${editable ? "is-editing" : ""}`}
+        className={`page-snapshot__content ${editable ? "is-editing" : ""} ${editable && isEditorEmpty ? "is-empty" : ""}`}
         onInputCapture={handleEditorInput}
+        data-placeholder="Start writing your memory..."
       >
         <Editor
           key={`${viewSnapshot?.id ?? "empty"}-${editorResetSeed}`}

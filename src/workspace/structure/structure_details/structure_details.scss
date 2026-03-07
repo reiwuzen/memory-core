@@ -7,8 +7,6 @@
 
   border: 1px solid var(--border-color);
 
-  position: relative;
-
   font-family: "Inter", system-ui, sans-serif;
   color: var(--text-primary);
 }
@@ -35,22 +33,25 @@
 
 /* DELETE BUTTON */
 
-.onClick_removeTag_structure_details {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-
-  border: none;
-  background: #ff4d4f;
-  color: white;
-
-  padding: 6px 12px;
-  border-radius: 8px;
-
-  cursor: pointer;
-  transition: 0.2s;
+.structure_details_actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
 }
 
-.onClick_removeTag_structure_details:hover {
-  background: #ff7875;
+.structure_details_actions button {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.structure_details_actions .ghost {
+  background: var(--surface-2);
+}
+
+.onClick_removeTag_structure_details {
+  background: var(--intent-danger);
+  color: var(--accent-contrast);
 }
