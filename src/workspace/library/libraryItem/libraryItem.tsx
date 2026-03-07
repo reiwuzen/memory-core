@@ -3,14 +3,26 @@ import "./libraryItem.scss";
 import "@reiwuzen/blocky-react/styles.css";
 
 import { useTags } from "@/hooks/useTag";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Editor, type EditorHandle } from "@reiwuzen/blocky-react";
 import { type AnyBlock } from "@reiwuzen/blocky";
-import { toast } from "sonner";
 
 import { useLibrary } from "@/hooks/useLibrary";
 import { Snapshot } from "@/types/snapshot";
 import { normalizeVersionedPage } from "@/helper/normaliseVersionedPage";
+import { appToast, Badge } from "@/components/ui";
+import { rankPage } from "@/helper/rankPages";
+
+const flattenText = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(flattenText).join(" ");
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map(flattenText)
+      .join(" ");
+  }
+  return "";
+};
 
 const LibraryItem = () => {
   const { pagesStore, pageActions } = useLibrary();
@@ -18,16 +30,21 @@ const LibraryItem = () => {
   const { tagsData } = useTags();
 
   const activePage = pagesStore.activePage;
-  console.log(activePage);
   const { pageMeta, normalizedSnapshots } = activePage;
+  const { score, reasons } = useMemo(() => rankPage(activePage), [activePage]);
 
   const { byId, ids } = normalizedSnapshots;
 
   const editorRef = useRef<EditorHandle>(null);
   const addTagBtnRef = useRef<HTMLButtonElement>(null);
   const tagPickerRef = useRef<HTMLDivElement>(null);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(false);
+  const lastSavedContentRef = useRef("");
 
   const [editable, setEditable] = useState(false);
+  const [editorResetSeed, setEditorResetSeed] = useState(0);
+  const [autosaveEnabled, setAutosaveEnabled] = useState(false);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showSnapshotsList, setShowSnapshotsList] = useState(false);
 
@@ -49,6 +66,23 @@ const LibraryItem = () => {
     if (!viewSnapshot) return undefined;
     return JSON.parse(viewSnapshot.contentJson) as AnyBlock[];
   }, [viewSnapshot]);
+
+  const contentText = useMemo(() => {
+    if (!parsedBlocks) return "";
+    return parsedBlocks
+      .map((block) => flattenText((block as { content?: unknown }).content))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }, [parsedBlocks]);
+
+  const wordCount = useMemo(() => {
+    if (!contentText) return 0;
+    return contentText.split(" ").filter(Boolean).length;
+  }, [contentText]);
+
+  const charCount = contentText.length;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
   const pageTagIds = useMemo(() => new Set(pageMeta.tags), [pageMeta.tags]);
 
@@ -81,26 +115,71 @@ const LibraryItem = () => {
     };
   }, []);
 
-  const saveSnapshot = async () => {
-    const blocks = editorRef.current?.serialize();
-    if (!blocks) throw new Error("Editor not ready");
+  useEffect(() => {
+    lastSavedContentRef.current = JSON.stringify(parsedBlocks ?? []);
+  }, [parsedBlocks, viewSnapshot?.id]);
 
+  const saveSnapshot = useCallback(async (options?: { exitEdit?: boolean; content?: string }) => {
+    if (isSavingRef.current) return false;
+    isSavingRef.current = true;
+    try {
+      const blocks = options?.content ? null : editorRef.current?.serialize();
+      const serialized = options?.content ?? JSON.stringify(blocks ?? []);
+
+      if (serialized === lastSavedContentRef.current) {
+        return false;
+      }
+
+      if (options?.exitEdit ?? true) {
+        setEditable(false);
+      }
+
+      const res = await pageActions.page.createNewSnapshot(
+        pageMeta,
+        serialized,
+      );
+
+      res.match(
+        (vp) => pageActions.activePage.set(normalizeVersionedPage(vp)),
+        (err) => {
+          throw err;
+        },
+      );
+      lastSavedContentRef.current = serialized;
+      return true;
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [pageActions, pageMeta]);
+
+  const handleSave = useCallback(() => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    (async () => {
+      try {
+        const didSave = await saveSnapshot({ exitEdit: true });
+        if (didSave) appToast.success("Page saved successfully");
+        else appToast.info("No changes to save");
+      } catch (err) {
+        appToast.error(`Failed to save: ${err}`);
+      }
+    })();
+  }, [saveSnapshot]);
+
+  const discardDraft = useCallback(() => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
     setEditable(false);
+    setEditorResetSeed((v) => v + 1);
+    appToast.info("Draft discarded");
+  }, []);
 
-    const res = await pageActions.page.createNewSnapshot(
-      pageMeta,
-      JSON.stringify(blocks),
-    );
-
-    res.match(
-      (vp) => pageActions.activePage.set(normalizeVersionedPage(vp)),
-      (err) => {
-        throw err;
-      },
-    );
-  };
-
-  const deleteAndExit = async () => {
+  const deleteAndExit = useCallback(async () => {
     const res = await pageActions.page.delete(pageMeta.id);
 
     if (!res.ok) {
@@ -109,110 +188,148 @@ const LibraryItem = () => {
     }
 
     setActiveTabView("list");
-  };
+  }, [pageActions, pageMeta.id, setActiveTabView]);
+
+  useEffect(() => {
+    const handleShortcuts = (event: KeyboardEvent) => {
+      if (!editable) return;
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        handleSave();
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        discardDraft();
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcuts);
+    return () => window.removeEventListener("keydown", handleShortcuts);
+  }, [discardDraft, editable, handleSave]);
+
+  useEffect(() => {
+    if (autosaveEnabled) return;
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+  }, [autosaveEnabled]);
+
+  useEffect(() => {
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleEditorInput = useCallback(() => {
+    if (!editable || !autosaveEnabled) return;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+    autosaveTimerRef.current = setTimeout(async () => {
+      const blocks = editorRef.current?.serialize();
+      if (!blocks) return;
+
+      const content = JSON.stringify(blocks);
+
+      try {
+        await saveSnapshot({ exitEdit: false, content });
+      } catch (err) {
+        appToast.error(`Autosave failed: ${err}`);
+      }
+    }, 1200);
+  }, [autosaveEnabled, editable, saveSnapshot]);
 
   return (
     <article className="page-snapshot">
-      <div className="page-snapshot-accessory-bar">
-        {!editable ? (
+      <header className="page-snapshot-topbar">
+        <div className="topbar-left">
           <button
-            className="page-snapshot-edit-btn"
+            className="toolbar-btn ghost"
+            onClick={() => setActiveTabView("list")}
+            title="Back to library"
+          >
+            Back
+          </button>
+          <span className="status-badge">{editable ? "Editing" : "Read only"}</span>
+          {editable && (
+            <span className="status-note">Press Ctrl/Cmd+S to save, Esc to discard</span>
+          )}
+        </div>
+
+        <div className="page-snapshot-accessory-bar">
+          {!editable ? (
+            <button
+              className="toolbar-btn primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditable(true);
+              }}
+            >
+              Edit
+            </button>
+          ) : (
+            <>
+              <button className="toolbar-btn success" onClick={handleSave}>
+                Save
+              </button>
+              <button className="toolbar-btn ghost" onClick={discardDraft}>
+                Discard
+              </button>
+            </>
+          )}
+
+          {editable && (
+            <button
+              className={`toolbar-btn ${autosaveEnabled ? "success" : "ghost"}`}
+              onClick={() => setAutosaveEnabled((v) => !v)}
+              title="Autosave with 1.2s debounce"
+            >
+              Autosave: {autosaveEnabled ? "On" : "Off"}
+            </button>
+          )}
+
+          <button
+            className="toolbar-btn ghost"
             onClick={(e) => {
               e.stopPropagation();
-              setEditable(true);
+              setShowSnapshotsList((v) => !v);
+              setShowTagPicker(false);
             }}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-            </svg>
+            Snapshots
           </button>
-        ) : (
+
           <button
-            className="page-snapshot-save-btn"
-            onClick={() =>
-              toast.promise(saveSnapshot(), {
-                loading: "Saving node",
-                success: "Node saved successfully",
-                error: (err) => `Failed to save: ${err}`,
-              })
-            }
+            ref={addTagBtnRef}
+            className="toolbar-btn ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTagPicker((p) => !p);
+              setShowSnapshotsList(false);
+            }}
           >
-            <svg
-              width="800px"
-              height="800px"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M18.1716 1C18.702 1 19.2107 1.21071 19.5858 1.58579L22.4142 4.41421C22.7893 4.78929 23 5.29799 23 5.82843V20C23 21.6569 21.6569 23 20 23H4C2.34315 23 1 21.6569 1 20V4C1 2.34315 2.34315 1 4 1H18.1716ZM4 3C3.44772 3 3 3.44772 3 4V20C3 20.5523 3.44772 21 4 21L5 21L5 15C5 13.3431 6.34315 12 8 12L16 12C17.6569 12 19 13.3431 19 15V21H20C20.5523 21 21 20.5523 21 20V6.82843C21 6.29799 20.7893 5.78929 20.4142 5.41421L18.5858 3.58579C18.2107 3.21071 17.702 3 17.1716 3H17V5C17 6.65685 15.6569 8 14 8H10C8.34315 8 7 6.65685 7 5V3H4ZM17 21V15C17 14.4477 16.5523 14 16 14L8 14C7.44772 14 7 14.4477 7 15L7 21L17 21ZM9 3H15V5C15 5.55228 14.5523 6 14 6H10C9.44772 6 9 5.55228 9 5V3Z"
-                fill="#0F0F0F"
-              />
-            </svg>
+            Add Tag
           </button>
-        )}
 
-        <button
-          className="page-snapshot-delete-btn"
-          onClick={(e) => {
-            e.stopPropagation();
+          <button
+            className="toolbar-btn danger"
+            onClick={(e) => {
+              e.stopPropagation();
 
-            toast.promise(deleteAndExit(), {
-              loading: "Deleting...",
-              success: "Deleted successfully",
-              error: (e) => e.message,
-            });
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            color="black"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+              appToast.promise(deleteAndExit(), {
+                loading: "Deleting...",
+                success: "Deleted successfully",
+                error: (err) => err.message,
+              });
+            }}
           >
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-          </svg>
-        </button>
-
-        <button
-          className="page-snapshot-view-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowSnapshotsList((v) => !v);
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
-          fill="currentColor"
-            color="black"
-            stroke="currentColor">
-            <path
-              d="M83.4,16.6c-6.8,0-12.4,5.3-13,12c-4,0.3-8.1,2.5-10.7,5.1c-2.4,2.4-4,5.4-4.8,8.2c-1.3-0.8-2.8-1.3-4.5-1.3
-    c-3,0-5.6,1.5-7.2,3.9V16.6C43.2,9.7,37.6,4,30.7,4c-6.9,0-12.5,5.6-12.5,12.5c0,6.7,5.3,12.2,12,12.5v42.2c-6.7,0.3-12,5.8-12,12.5
-    c0,6.9,5.6,12.5,12.5,12.5c6.9,0,12.5-5.6,12.5-12.5c0-4-1.9-7.5-4.8-9.8c0.7-3.1,2.2-6.2,4.8-8.9c3.9-3.9,9.4-6.4,14.8-6.6
-    c0.6,6.5,6.1,11.5,12.8,11.5c7.1,0,12.9-5.8,12.9-12.9C96.3,22.4,90.5,16.6,83.4,16.6z"
-            />
-          </svg>
-        </button>
+            Delete
+          </button>
+        </div>
 
         {showSnapshotsList && (
           <div className="snapshots">
@@ -230,11 +347,12 @@ const LibraryItem = () => {
                     key={s.id}
                     className={s.id === viewSnapshot?.id ? "active" : ""}
                     onClick={() => {
+                      setEditable(false);
                       setViewSnapshot(s);
                       setShowSnapshotsList(false);
                     }}
                   >
-                    <span>{s.comment}</span>
+                    <span>{s.comment || "Snapshot"}</span>
                     <time>{new Date(s.createdAt).toLocaleString()}</time>
                     {headSnapshot?.id === s.id && <span>head</span>}
                   </li>
@@ -243,17 +361,6 @@ const LibraryItem = () => {
             </ul>
           </div>
         )}
-
-        <button
-          ref={addTagBtnRef}
-          className="page-snapshot-add_tag-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowTagPicker((p) => !p);
-          }}
-        >
-          Add Tag
-        </button>
 
         {showTagPicker && (
           <div ref={tagPickerRef} className="tag-picker">
@@ -271,10 +378,7 @@ const LibraryItem = () => {
                   key={t.id}
                   className="tag-picker__item"
                   onClick={async () => {
-                    const res = await pageActions.page.addTag(
-                      pageMeta.id,
-                      t.id,
-                    );
+                    const res = await pageActions.page.addTag(pageMeta.id, t.id);
 
                     res.match(
                       (updatedMeta) =>
@@ -294,10 +398,38 @@ const LibraryItem = () => {
             </ul>
           </div>
         )}
-      </div>
+      </header>
 
       <header className="page-snapshot__header">
-        <h1 className="page-snapshot__title">{pageMeta.title}</h1>
+        <div className="title-wrap">
+          <h1 className="page-snapshot__title">{pageMeta.title}</h1>
+          <span className="page-type">{pageMeta.type}</span>
+          <Badge
+            title={reasons.map((reason) => `- ${reason}`).join("\n")}
+            aria-label={`Priority score ${score}`}
+          >
+            Score {score}
+          </Badge>
+        </div>
+
+        <div className="page-stats">
+          <div className="stat">
+            <span className="label">Words</span>
+            <strong>{wordCount}</strong>
+          </div>
+          <div className="stat">
+            <span className="label">Characters</span>
+            <strong>{charCount}</strong>
+          </div>
+          <div className="stat">
+            <span className="label">Read time</span>
+            <strong>{readingMinutes} min</strong>
+          </div>
+          <div className="stat">
+            <span className="label">Snapshots</span>
+            <strong>{ids.length}</strong>
+          </div>
+        </div>
 
         <div className="page-snapshot__timestamp">
           <div>
@@ -331,20 +463,42 @@ const LibraryItem = () => {
         {assignedTags.length > 0 ? (
           assignedTags.map((t) => (
             <li className="tag" key={t.id}>
-              {t.label}
+              <span>{t.label}</span>
+              <button
+                className="tag-remove"
+                onClick={async () => {
+                  const res = await pageActions.page.removeTag(pageMeta.id, t.id);
+
+                  res.match(
+                    (updatedMeta) =>
+                      pageActions.activePage.set({
+                        pageMeta: updatedMeta,
+                        normalizedSnapshots,
+                      }),
+                    (err) => console.error("[TagNotRemoved]", err),
+                  );
+                }}
+                title={`Remove ${t.label}`}
+              >
+                x
+              </button>
             </li>
           ))
         ) : (
-          <li className="no-tags">No Tags available</li>
+          <li className="no-tags">No tags available</li>
         )}
       </ul>
 
-      <section className="page-snapshot__content">
+      <section
+        className={`page-snapshot__content ${editable ? "is-editing" : ""}`}
+        onInputCapture={handleEditorInput}
+      >
         <Editor
-          key={viewSnapshot?.id ?? ""}
+          key={`${viewSnapshot?.id ?? "empty"}-${editorResetSeed}`}
           ref={editorRef}
-          initialBlocks={parsedBlocks}
+          initialBlocks={parsedBlocks ?? []}
           editable={editable}
+          placeholder="Start writing..."
         />
       </section>
     </article>

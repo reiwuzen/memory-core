@@ -4,7 +4,7 @@
   border-left: 1px solid var(--border-color);
   height: calc(100% - 32px);
   width: calc(100% - 32px);
-  background: #070a10;
+  background: var(--bg-primary);
 
   h3 {
     margin-bottom: 4px;
@@ -16,7 +16,7 @@
     right: 10px;
     width: 30px;
     height: 30px;border-radius: 30px;
-    background: #8c8c8c;
+    background: var(--accent-secondary);
     border: none;
     cursor: pointer;
   }
@@ -26,9 +26,9 @@
     right: 42px;
     width: 30px;
     height: 30px;border-radius: 30px;
-    background: #8c8c8c;
+    background: var(--accent-secondary);
     border: none;
     cursor: pointer;
   }
-  
+
 }

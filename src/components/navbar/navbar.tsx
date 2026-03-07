@@ -7,9 +7,9 @@ import { useSettings } from "@/hooks/useSettings";
 const Navbar = () => {
   const { activeTab, setActiveTabTypeAndView } = useActiveTab();
   const [isOpen, setIsOpen] = useState(false);
-  const {settingsView} = useSettings();
+  const { settingsView } = useSettings();
 
-  const handleClick =<T extends TabType> (type: T, view: TabView<T>) => {
+  const handleClick = <T extends TabType>(type: T, view: TabView<T>) => {
     setActiveTabTypeAndView(type, view);
     setIsOpen(false);
   };
@@ -68,10 +68,10 @@ const Navbar = () => {
             <h6>Structure</h6>
           </li>
           <li
-            className={activeTab?.type === 'calender' ? 'active' : ''}
-            onClick={() => handleClick('calender','calender')}
+            className={activeTab?.type === "calendar" ? "active" : ""}
+            onClick={() => handleClick("calendar","calendar")}
           >
-            <h6>Calender</h6>
+            <h6>Calendar</h6>
           </li>
 
           <li
