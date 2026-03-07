@@ -1,6 +1,6 @@
 .settings__section {
   padding: 26px;
-  color: #dce4ec;
+  color: var(--text-secondary);
   font-family: "Inter", system-ui, sans-serif;
 
   h3 {
@@ -19,33 +19,32 @@
     margin-bottom: 14px;
     padding: 14px 18px;
 
-    background: #1f2f46;
+    background: var(--card-bg);
     border-radius: 12px;
-
-    border: 1px solid rgba(255,255,255,0.04);
+    border: 1px solid var(--border-color);
 
     transition: 0.25s;
   }
 
   .setting:hover {
-    background: #243652;
+    background: var(--bg-secondary);
   }
 
   span {
     font-size: 14px;
     font-weight: 500;
-    color: #e6edf3;
+    color: var(--text-primary);
   }
 
   /* SELECT STYLE */
 
   select {
-    background: #263b5b;
-    border: none;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 6px 12px;
 
-    color: #fff;
+    color: var(--text-primary);
     font-size: 13px;
 
     outline: none;
@@ -55,7 +54,7 @@
   }
 
   select:hover {
-    background: #2f4b73;
+    background: color-mix(in srgb, var(--accent-secondary) 20%, var(--bg-secondary));
   }
 
   /* MODERN TOGGLE */
@@ -65,7 +64,8 @@
     height: 22px;
 
     appearance: none;
-    background: #324a6b;
+    background: var(--surface-3);
+    border: 1px solid var(--border-color);
     border-radius: 20px;
 
     position: relative;
@@ -79,7 +79,7 @@
     width: 18px;
     height: 18px;
 
-    background: white;
+    background: var(--accent-contrast);
     border-radius: 50%;
 
     top: 2px;
@@ -89,7 +89,7 @@
   }
 
   input[type="checkbox"]:checked {
-    background: #00a8b5;
+    background: var(--accent-primary);
   }
 
   input[type="checkbox"]:checked::before {

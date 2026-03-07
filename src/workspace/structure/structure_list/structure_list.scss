@@ -1,27 +1,20 @@
 .structure_list{
-
-    .tag-input {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-  input {
+  input,
+  select {
     flex: 1;
-    padding: 6px 8px;
+    padding: 8px 10px;
     background: var(--bg-secondary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 8px;
   }
+}
 
-  button {
-    padding: 6px 12px;
-    cursor: pointer;
-    background: var(--accent-secondary);
-    color: var(--text-primary);
-    border: none;
-    border-radius: 6px;
-  }
+.structure_list_controls {
+  display: grid;
+  grid-template-columns: 1fr 190px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 /* ================= TITLE ================= */
@@ -36,7 +29,7 @@
 /* ================= LIST CONTAINER ================= */
 
 .tag-list {
-  max-width: 700px;
+  max-width: 900px;
 
   background: var(--bg-secondary);
   border-radius: 14px;
@@ -142,4 +135,10 @@
 
 .tag-item:hover .delete {
   opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .structure_list_controls {
+    grid-template-columns: 1fr;
+  }
 }

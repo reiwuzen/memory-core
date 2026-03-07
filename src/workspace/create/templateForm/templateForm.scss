@@ -61,6 +61,14 @@
   display: flex;
   justify-content: space-between;
   cursor: pointer;
+
+  .chevron {
+    transition: transform var(--motion-fast) var(--easing-standard);
+  }
+
+  &.open .chevron {
+    transform: rotate(180deg);
+  }
 }
 
 .custom-select-dropdown {
@@ -73,6 +81,8 @@
   border: 1px solid var(--border-color);
   padding: 4px;
   z-index: 50;
+  animation: dropdown-enter var(--motion-normal) var(--easing-standard);
+  transform-origin: top center;
 }
 
 .custom-select-option {
@@ -87,6 +97,17 @@
 
   &.active {
     background: color-mix(in srgb, var(--accent-primary) 25%, transparent);
+  }
+}
+
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

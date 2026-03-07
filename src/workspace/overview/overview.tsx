@@ -3,7 +3,9 @@ import "./overview.scss";
 import { useLibrary } from "@/hooks/useLibrary";
 import { formatToLocaleDateTime } from "@/helper/formatToLocaleDateTime";
 import { rankPages } from "@/helper/rankPages";
-import { Badge, Button, EmptyState, Input, Modal, Skeleton } from "@/components/ui";
+import { isNsfwPage } from "@/helper/isNsfwPage";
+import { useSettings } from "@/hooks/useSettings";
+import { Badge, EmptyState, Input, Modal, Skeleton } from "@/components/ui";
 import type { NormalizedVersionedPage } from "@/types/page";
 
 const STOP_WORDS = new Set([
@@ -104,6 +106,7 @@ const OverviewSkeleton = () => {
 
 const Overview = () => {
   const { pagesStore, pageActions } = useLibrary();
+  const { settingsData } = useSettings();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -135,6 +138,7 @@ const Overview = () => {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const ranked = rankPages(pagesStore.pages).filter(({ page }) => {
+      if (!settingsData.nsfwContent && isNsfwPage(page)) return false;
       if (!q) return true;
       return (
         page.pageMeta.title.toLowerCase().includes(q) ||
@@ -153,7 +157,7 @@ const Overview = () => {
     });
 
     return ranked;
-  }, [pagesStore.pages, query, sortBy]);
+  }, [pagesStore.pages, query, settingsData.nsfwContent, sortBy]);
 
   const recentOpened = useMemo(() => {
     return [...filtered]
@@ -192,10 +196,10 @@ const Overview = () => {
   );
 
   const selectedSummary = useMemo(() => {
-    if (!selectedPage) return null;
+    if (!selectedPage || !settingsData.aiAnalysis) return null;
     const text = getPageText(selectedPage);
     return summarizeText(text);
-  }, [selectedPage]);
+  }, [selectedPage, settingsData.aiAnalysis]);
 
   if (loading) return <OverviewSkeleton />;
   if (error) return <div className="overview error">{error}</div>;
@@ -317,12 +321,14 @@ const Overview = () => {
         title={selectedPage?.pageMeta.title ?? "Summary"}
         isOpen={!!selectedPage}
         onClose={() => setSelectedPageId(null)}
-        actions={
-          <Button variant="ghost" onClick={() => setSelectedPageId(null)}>
-            Close
-          </Button>
-        }
       >
+        {selectedPage && !settingsData.aiAnalysis ? (
+          <div className="overview-summary-modal">
+            <p className="overview-summary-empty">
+              AI analysis is off. Enable it in Settings &gt; Privacy &amp; Storage to generate summaries.
+            </p>
+          </div>
+        ) : null}
         {selectedPage && selectedSummary ? (
           <div className="overview-summary-modal">
             <p className="overview-summary-text">{selectedSummary.summary}</p>

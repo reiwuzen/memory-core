@@ -36,8 +36,21 @@
 }
 
 .ui-btn--primary {
-  background: var(--accent-primary);
+  background: linear-gradient(
+    135deg,
+    var(--brand-grad-start, var(--accent-primary)),
+    var(--brand-grad-end, var(--accent-secondary))
+  );
   color: var(--accent-contrast);
+  border-color: color-mix(in srgb, var(--brand-grad-end, var(--accent-secondary)) 60%, transparent);
+}
+
+.ui-btn--primary:hover {
+  background: linear-gradient(
+    135deg,
+    var(--brand-grad-alt-start, var(--brand-grad-start, var(--accent-primary))),
+    var(--brand-grad-alt-end, var(--brand-grad-end, var(--accent-secondary)))
+  );
 }
 
 .ui-btn--ghost {

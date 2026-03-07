@@ -1,163 +1,81 @@
-# Memory-Core
+# Memory-Core (Zensys)
 
-**Memory-Core** is a local-first, privacy-respecting knowledge and memory management application designed to store, organize, and retrieve information based on **importance**, not just recency or location.
+Memory-Core is a local-first desktop knowledge system built with Tauri, React, and Rust.  
+It helps users store and retrieve information by **priority** instead of only recency.
 
-Most tools treat notes as flat text.  
-Memory-Core treats knowledge as **weighted**.
+![Memory-Core preview](public/content.png)
 
----
+## Why This Exists
 
-## The Problem
+Most note tools optimize for documents, folders, and timelines.  
+Memory-Core treats knowledge as discrete items with metadata and importance scores, so high-value information surfaces first.
 
-Not all information is equally important, even when it lives in the same document.
+## Key Principles
 
-Traditional note-taking tools prioritize:
+- Local-first by default: content and metadata stay on device.
+- Priority is core data: not a tag workaround.
+- Retrieval over storage UI: rank what matters, reduce noise.
 
-- chronology
-- folders
-- documents as indivisible units
+## Tech Stack
 
-This leads to cognitive overload, where critical facts are buried alongside low-value context.
+- Frontend: React 19 + TypeScript + Vite + Sass
+- Desktop shell/backend: Tauri v2 + Rust
+- State/UI: Zustand, custom hooks, reusable component modules
 
----
+## Project Structure
 
-## The Core Idea
+- `src/`: frontend app source
+- `src/workspace/`: feature-level views and flows
+- `src/components/`: reusable UI components
+- `src/service/`: frontend service boundary to Tauri commands
+- `src/store/`: state stores
+- `src-tauri/src/`: Rust commands, models, storage, settings
 
-Memory-Core models knowledge as **discrete memory items**, each with its own importance.
+## Getting Started
 
-Users store *Memory Items* such as:
+### Prerequisites
 
-- facts
-- definitions
-- notes
-- decisions
-- references
+- Node.js (LTS)
+- `pnpm`
+- Rust toolchain (`rustup`, `cargo`)
+- Tauri system prerequisites for your OS
 
-Each memory item includes:
+### Install
 
-- rich metadata (tags, context, category, source, timestamps)
-- a **priority / importance weight** that can be adjusted over time
+```bash
+pnpm install
+```
 
-Retrieval is **priority-aware**, not just keyword-based.
+### Development
 
-The system surfaces what matters most — not what was written last.
+```bash
+pnpm dev
+```
 
-> If a notebook stores information, Memory-Core augments memory.
+Runs frontend only on Vite dev server.
 
----
+```bash
+pnpm tauri dev
+```
 
-## Architecture Philosophy
+Runs the full desktop app (frontend + Rust backend).
 
-### 1. Local-First by Default (Non-Negotiable)
+## Build & Quality
 
-All memory content and metadata are stored locally on the user’s device.
+```bash
+pnpm lint        # ESLint checks
+pnpm lint:fix    # Fix lint issues
+pnpm build       # Type check + Vite production build
+pnpm tauri build # Desktop binary build
+```
 
-- No forced cloud
-- No dark patterns
-- No implicit data ownership transfer
+## Current Status
 
-Cloud sync, if ever introduced, will be optional and explicit.
+- Version: `0.6.0`
+- Pre-1.0 and actively evolving
+- Breaking changes can occur before stable `1.0.0`
 
-This avoids unnecessary:
-
-- privacy risks
-- cost
-- architectural complexity
-
----
-
-### 2. API-Driven, Not Storage-Driven
-
-Backend APIs exist primarily to:
-
-- fetch
-- process
-- rank
-- return results
-
-They are **not** treated as the primary storage layer.
-
-Storage is considered **user territory**, not platform territory.
-
----
-
-### 3. Priority Is a First-Class Concept
-
-Priority is not:
-
-- a tag
-- a folder
-- a workaround
-
-It is core data.
-
-Examples:
-
-- A single paragraph may be more important than an entire document
-- Exam facts > background explanations
-- Definitions > commentary
-- Decisions > discussions
-
-Memory-Core respects this hierarchy by design.
-
----
-
-## Functional Capabilities
-
-- Store memory items across domains (subjects, projects, personal knowledge)
-- Attach structured metadata to each item
-- Assign and adjust importance over time
-- Retrieve information based on:
-  - importance
-  - context
-  - relevance
-- Reduce cognitive overload by filtering low-value noise
-
-In short:  
-**Memory-Core is an external brain that understands what you care about most.**
-
----
-
-## What This Is Not
-
-- Not a traditional note-taking app
-- Not a document-centric editor
-- Not “Notion but local”
-- Not an AI gimmick without clear priority mechanics
-
-This is a **priority-weighted memory retrieval system**.
-
----
-
-## Project Status
-
-- Current status: **pre-1.0**
-- APIs, data models, and architecture may change
-- Active development with focus on:
-  - architectural stabilization
-  - editor reliability
-  - priority-based retrieval
-
-Breaking changes are expected before `v1.0.0`.
-
----
-
-## Versioning
-
-Memory-Core follows **Semantic Versioning**.
-
-- `0.x` → active development, no stability guarantees
-- `1.0.0` → planned once core concepts and APIs stabilize
-
----
-
-## One-Line Identity
-
-> **Memory-Core is a local-first system for storing and retrieving knowledge based on what matters most, not what was written last.**
-
----
 
 ## License
 
-This project is licensed under the [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE) **Apache License, Version 2.0**.
-See the [LICENSE](LICENSE) file for details.
+Apache License 2.0. See [LICENSE](LICENSE).

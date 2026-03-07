@@ -307,6 +307,7 @@
 }
 
 .page-snapshot__content {
+  position: relative;
   width: 100%;
   flex: 1;
   margin-top: 1rem;
@@ -356,6 +357,21 @@
   .be-empty-placeholder {
     color: var(--text-tertiary);
   }
+}
+
+.page-snapshot__content.is-empty .be-content {
+  position: relative;
+}
+
+.page-snapshot__content.is-empty .be-content::before {
+  content: "Start writing your memory...";
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--text-tertiary);
+  font-size: 0.92rem;
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (max-width: 860px) {

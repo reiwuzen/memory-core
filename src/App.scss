@@ -31,6 +31,98 @@
   // min-width: 100vw;
 }
 
+.theme-custom-aurora #root {
+  background:
+    radial-gradient(circle at 12% 12%, color-mix(in srgb, #4ea8ff 26%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 86% 18%, color-mix(in srgb, #2ecc71 20%, transparent) 0%, transparent 34%),
+    radial-gradient(circle at 82% 84%, color-mix(in srgb, #ef4444 14%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 16% 82%, color-mix(in srgb, #fbbf24 16%, transparent) 0%, transparent 30%),
+    var(--bg-primary);
+}
+
+.theme-custom-forest #root {
+  background:
+    radial-gradient(circle at 14% 14%, color-mix(in srgb, #2ecc71 28%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 84% 22%, color-mix(in srgb, #14b8a6 22%, transparent) 0%, transparent 34%),
+    radial-gradient(circle at 80% 84%, color-mix(in srgb, #22c55e 14%, transparent) 0%, transparent 30%),
+    var(--bg-primary);
+}
+
+.theme-custom-sunset #root {
+  background:
+    radial-gradient(circle at 14% 14%, color-mix(in srgb, #ef4444 24%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 84% 20%, color-mix(in srgb, #f97316 22%, transparent) 0%, transparent 34%),
+    radial-gradient(circle at 80% 82%, color-mix(in srgb, #fbbf24 14%, transparent) 0%, transparent 30%),
+    var(--bg-primary);
+}
+
+.theme-custom-citrus #root {
+  background:
+    radial-gradient(circle at 12% 16%, color-mix(in srgb, #facc15 28%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 86% 18%, color-mix(in srgb, #84cc16 22%, transparent) 0%, transparent 34%),
+    radial-gradient(circle at 78% 82%, color-mix(in srgb, #f59e0b 15%, transparent) 0%, transparent 30%),
+    var(--bg-primary);
+}
+
+.theme-custom-aurora #root .ui-card,
+.theme-custom-forest #root .ui-card,
+.theme-custom-sunset #root .ui-card,
+.theme-custom-citrus #root .ui-card,
+.theme-custom-aurora #root .overview .card,
+.theme-custom-forest #root .overview .card,
+.theme-custom-sunset #root .overview .card,
+.theme-custom-citrus #root .overview .card,
+.theme-custom-aurora #root .library-list .library-list-item,
+.theme-custom-forest #root .library-list .library-list-item,
+.theme-custom-sunset #root .library-list .library-list-item,
+.theme-custom-citrus #root .library-list .library-list-item,
+.theme-custom-aurora #root .summary-card,
+.theme-custom-forest #root .summary-card,
+.theme-custom-sunset #root .summary-card,
+.theme-custom-citrus #root .summary-card {
+  background:
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--brand-grad-start, var(--accent-primary)) 11%, var(--card-bg)) 0%,
+      color-mix(in srgb, var(--brand-grad-end, var(--accent-secondary)) 8%, var(--card-bg)) 100%
+    );
+  border-color: color-mix(in srgb, var(--brand-grad-start, var(--accent-primary)) 36%, var(--border-color));
+  box-shadow:
+    0 10px 24px color-mix(in srgb, var(--shadow-color) 68%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--brand-grad-alt-start, var(--accent-primary)) 18%, transparent);
+}
+
+.theme-custom-aurora #root .overview .card:hover,
+.theme-custom-forest #root .overview .card:hover,
+.theme-custom-sunset #root .overview .card:hover,
+.theme-custom-citrus #root .overview .card:hover,
+.theme-custom-aurora #root .library-list .library-list-item:hover,
+.theme-custom-forest #root .library-list .library-list-item:hover,
+.theme-custom-sunset #root .library-list .library-list-item:hover,
+.theme-custom-citrus #root .library-list .library-list-item:hover {
+  border-color: color-mix(in srgb, var(--brand-grad-alt-start, var(--accent-primary)) 62%, var(--border-color));
+}
+
+.theme-custom-aurora #root .ui-badge,
+.theme-custom-forest #root .ui-badge,
+.theme-custom-sunset #root .ui-badge,
+.theme-custom-citrus #root .ui-badge,
+.theme-custom-aurora #root .tag,
+.theme-custom-forest #root .tag,
+.theme-custom-sunset #root .tag,
+.theme-custom-citrus #root .tag,
+.theme-custom-aurora #root .page-type,
+.theme-custom-forest #root .page-type,
+.theme-custom-sunset #root .page-type,
+.theme-custom-citrus #root .page-type {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand-grad-start, var(--accent-primary)) 26%, transparent),
+    color-mix(in srgb, var(--brand-grad-end, var(--accent-secondary)) 26%, transparent)
+  );
+  border-color: color-mix(in srgb, var(--brand-grad-end, var(--accent-secondary)) 35%, var(--border-color));
+}
+
 button,
 input,
 select,
@@ -48,4 +140,51 @@ textarea {
   width: 100vw;
   display: flex;
   position: relative;
+}
+
+select,
+.ui-select,
+.custom-select-trigger,
+.calendar-month-trigger {
+  transition:
+    transform var(--motion-fast) var(--easing-standard),
+    box-shadow var(--motion-fast) var(--easing-standard),
+    border-color var(--motion-fast) var(--easing-standard),
+    background-color var(--motion-fast) var(--easing-standard) !important;
+}
+
+select:hover,
+.ui-select:hover,
+.custom-select-trigger:hover,
+.calendar-month-trigger:hover {
+  transform: translateY(-1px);
+}
+
+select:focus-visible,
+.ui-select:focus-visible,
+.custom-select-trigger:focus-visible,
+.calendar-month-trigger:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+.performance-mode * {
+  box-shadow: none !important;
+}
+
+.performance-mode .settings__backdrop {
+  backdrop-filter: none !important;
+}
+
+.performance-mode .overview .card:hover,
+.performance-mode .library-list .library-list-item:hover,
+.performance-mode .generalSettings > div:hover {
+  transform: none !important;
 }

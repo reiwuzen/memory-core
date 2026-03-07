@@ -1,23 +1,38 @@
 import { Tag } from "@/types/tag";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { v7 as uuidv7 } from "uuid";
 import "./structure_create.scss";
 
 type StructureCreateProps = {
   onCreate: (tag: Tag) => void;
+  initialTag?: Tag | null;
+  onCancel?: () => void;
 };
 
-const StructureCreate = ({ onCreate }: StructureCreateProps) => {
+const StructureCreate = ({ onCreate, initialTag = null, onCancel }: StructureCreateProps) => {
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState(0.1);
+  const isEditMode = !!initialTag;
+
+  useEffect(() => {
+    if (!initialTag) {
+      setLabel("");
+      setDescription("");
+      setPriority(0.1);
+      return;
+    }
+    setLabel(initialTag.label);
+    setDescription(initialTag.description);
+    setPriority(initialTag.priority);
+  }, [initialTag]);
 
   const handleCreate = () => {
     const trimmedLabel = label.trim();
     if (!trimmedLabel) return;
 
     const tag: Tag = {
-      id: uuidv7(),
+      id: initialTag?.id ?? uuidv7(),
       label: trimmedLabel,
       description: description.trim(),
       priority,
@@ -25,15 +40,16 @@ const StructureCreate = ({ onCreate }: StructureCreateProps) => {
 
     onCreate(tag);
 
-    // reset form
-    setLabel("");
-    setDescription("");
-    setPriority(0);
+    if (!isEditMode) {
+      setLabel("");
+      setDescription("");
+      setPriority(0.1);
+    }
   };
 
   return (
     <div className="structure_create">
-      <h3>Create New Tag</h3>
+      <h3>{isEditMode ? "Edit Tag" : "Create New Tag"}</h3>
 
       <label htmlFor="label">Title</label>
       <input
@@ -64,13 +80,19 @@ const StructureCreate = ({ onCreate }: StructureCreateProps) => {
 
       <p className="priority_value">{priority}</p>
 
-
-      <button
-        onClick={handleCreate}
-        disabled={!label.trim()}
-      >
-        Create
-      </button>
+      <div className="structure_create_actions">
+        {onCancel ? (
+          <button className="ghost" onClick={onCancel}>
+            Cancel
+          </button>
+        ) : null}
+        <button
+          onClick={handleCreate}
+          disabled={!label.trim()}
+        >
+          {isEditMode ? "Save Changes" : "Create"}
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,11 +1,10 @@
 import { useSettings } from "@/hooks/useSettings";
 import "./generalSettings.scss";
-import { toast } from "sonner";
+import type { CustomThemeVariant } from "@/types/settings";
 
 const GeneralSettings = () => {
   const {settingsData, settingsAction} =useSettings();
-  // const {setTheme, theme} = useSettings();
-  const theme = settingsData.theme
+  const theme = settingsData.theme;
   return (
     <div className="generalSettings">
       <h3>General</h3>
@@ -33,6 +32,31 @@ const GeneralSettings = () => {
           onClick={()=>settingsAction.theme.preset.custom()}>Custom</button>
         </div>
       </div>
+
+      {theme === "custom" ? (
+        <div className="themeVariantSettings">
+          <div className="d1">
+            <p className="p1">Custom palette</p>
+            <p className="p2">Pick a modern multi-color combination</p>
+          </div>
+          <div className="d2">
+            <select
+              value={settingsData.customThemeVariant}
+              aria-label="Custom theme palette"
+              onChange={(event) =>
+                settingsAction.theme.customVariant.set(
+                  event.target.value as CustomThemeVariant,
+                )
+              }
+            >
+              <option value="aurora">Aurora (Blue + Green)</option>
+              <option value="forest">Forest (Green + Teal)</option>
+              <option value="sunset">Sunset (Red + Orange)</option>
+              <option value="citrus">Citrus (Yellow + Lime)</option>
+            </select>
+          </div>
+        </div>
+      ) : null}
  
       <div className="languageSettings">
         <div className="d1">
@@ -40,9 +64,9 @@ const GeneralSettings = () => {
           <p className="p2">Current language is English</p>
         </div>
         <div className="d2">
-          <button className="b1" onClick={()=>{
-            toast.info(`'Will be available in Upcoming version's`)
-          }}>Change</button>
+          <select defaultValue="en" aria-label="App language">
+            <option value="en">English</option>
+          </select>
         </div>
       </div>
 
@@ -54,7 +78,12 @@ const GeneralSettings = () => {
         </div>
         <div className="d2">
           <label className="switch" id="l1">
-            <input type="checkbox" className="i1" />
+            <input
+              type="checkbox"
+              className="i1"
+              checked={settingsData.nsfwContent}
+              onChange={settingsAction.nsfwContent.toggle}
+            />
             <span className="slider round"></span>
           </label>
         </div>
@@ -66,7 +95,14 @@ const GeneralSettings = () => {
           <p className="p2">Manage in-app and desktop notifications</p>
         </div>
         <div className="d2">
-          <button className="b1">Change</button>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={settingsData.notifications}
+              onChange={settingsAction.notifications.toggle}
+            />
+            <span className="slider round"></span>
+          </label>
         </div>
       </div>
     </div>

@@ -46,6 +46,12 @@ pub fn load_all_tags(app:AppHandle) -> Result<Vec<Tag>,String>{
     Ok(tags)
 }
 
+/// fn to update a tag by overwriting its metadata.json
+#[command]
+pub fn update_tag(app: AppHandle, tag: Tag) -> Result<(), String> {
+    save_tag(app, tag)
+}
+
 /// fn to delete a tag by its id
 #[command]
 pub fn delete_tag(app:AppHandle, tag_id:String)-> Result<(),String>{
