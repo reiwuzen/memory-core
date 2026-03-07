@@ -1,13 +1,13 @@
 .generalSettings {
   padding: 28px;
-  color: #dce4ec;
+  color: var(--text-secondary);
   font-family: "Inter", system-ui, sans-serif;
 
   h3 {
     font-size: 22px;
     font-weight: 600;
     margin-bottom: 22px;
-    color: #e6edf3;
+    color: var(--text-primary);
   }
 
   /* ===== SETTINGS CARD ===== */
@@ -22,16 +22,16 @@
 
     border-radius: 14px;
 
-    background: #1f2f46; // same as your template cards
-    border: 1px solid rgba(255,255,255,0.04);
+    background: var(--card-bg); // same as your template cards
+    border: 1px solid var(--border-color);
 
     transition: all 0.25s ease;
   }
 
   > div:hover {
-    background: #243652;
+    background: var(--bg-secondary);
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    box-shadow: 0 6px 18px var(--shadow-color);
   }
 
   /* ===== LEFT TEXT ===== */
@@ -44,12 +44,12 @@
     .p1 {
       font-size: 15px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text-primary);
     }
 
     .p2 {
       font-size: 13px;
-      color: #9fb0c3;
+      color: var(--text-tertiary);
     }
   }
 
@@ -68,8 +68,12 @@
     border-radius: 8px;
     border: none;
 
-    background: #263b5b;
-    color: #e6edf3;
+    background: linear-gradient(
+      135deg,
+      var(--brand-grad-start, var(--accent-primary)),
+      var(--brand-grad-end, var(--accent-secondary))
+    );
+    color: var(--accent-contrast);
 
     font-size: 13px;
     font-weight: 500;
@@ -78,8 +82,21 @@
     transition: all 0.2s ease;
   }
 
+  select {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
   button:hover {
-    background: #2f4b73;
+    background: linear-gradient(
+      135deg,
+      var(--brand-grad-alt-start, var(--brand-grad-start, var(--accent-primary))),
+      var(--brand-grad-alt-end, var(--brand-grad-end, var(--accent-secondary)))
+    );
     transform: translateY(-1px);
   }
 
@@ -88,12 +105,12 @@
   }
 
   .b1 {
-    background: #00a8b5; // teal accent like sidebar icon
+    background: var(--accent-primary); // teal accent like sidebar icon
     color: white;
   }
 
   .b1:hover {
-    background: #00c2d4;
+    background: var(--accent-primary);
   }
 
   /* ===== MODERN TOGGLE SWITCH ===== */
@@ -113,7 +130,8 @@
   .slider {
     position: absolute;
     inset: 0;
-    background-color: #324a6b;
+    background-color: var(--surface-3);
+    border: 1px solid var(--border-color);
     border-radius: 30px;
     transition: 0.3s;
   }
@@ -131,7 +149,7 @@
   }
 
   input:checked + .slider {
-    background: #00a8b5;
+    background: var(--accent-primary);
   }
 
   input:checked + .slider:before {

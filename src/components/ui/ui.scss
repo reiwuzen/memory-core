@@ -1,0 +1,189 @@
+.ui-btn,
+.ui-input,
+.ui-select,
+.ui-card,
+.ui-badge,
+.ui-empty,
+.ui-modal,
+.ui-skeleton {
+  box-sizing: border-box;
+}
+
+.ui-btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition:
+    transform var(--motion-fast) var(--easing-standard),
+    background-color var(--motion-fast) var(--easing-standard),
+    border-color var(--motion-fast) var(--easing-standard);
+  cursor: pointer;
+  color: var(--text-primary);
+  background: var(--surface-2);
+}
+
+.ui-btn:hover {
+  transform: translateY(-1px);
+}
+
+.ui-btn:focus-visible,
+.ui-input:focus-visible,
+.ui-select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.ui-btn--primary {
+  background: linear-gradient(
+    135deg,
+    var(--brand-grad-start, var(--accent-primary)),
+    var(--brand-grad-end, var(--accent-secondary))
+  );
+  color: var(--accent-contrast);
+  border-color: color-mix(in srgb, var(--brand-grad-end, var(--accent-secondary)) 60%, transparent);
+}
+
+.ui-btn--primary:hover {
+  background: linear-gradient(
+    135deg,
+    var(--brand-grad-alt-start, var(--brand-grad-start, var(--accent-primary))),
+    var(--brand-grad-alt-end, var(--brand-grad-end, var(--accent-secondary)))
+  );
+}
+
+.ui-btn--ghost {
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border-color: var(--border-color);
+}
+
+.ui-btn--danger {
+  background: var(--intent-danger);
+  color: var(--accent-contrast);
+}
+
+.ui-btn--success {
+  background: var(--intent-success);
+  color: var(--accent-contrast);
+}
+
+.ui-input,
+.ui-select {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.62rem 0.75rem;
+  font-size: 0.86rem;
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+.ui-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-1);
+}
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: var(--radius-pill);
+  padding: 0.2rem 0.58rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+  color: var(--text-primary);
+}
+
+.ui-empty {
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.2rem;
+  text-align: center;
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+
+  h3 {
+    margin: 0 0 0.4rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.86rem;
+  }
+}
+
+.ui-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.ui-modal {
+  width: min(620px, calc(100vw - 2rem));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+.ui-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+}
+
+.ui-modal__content {
+  padding: 1rem;
+}
+
+.ui-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.ui-skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--surface-2) 70%, transparent) 25%,
+    color-mix(in srgb, var(--surface-3) 80%, transparent) 50%,
+    color-mix(in srgb, var(--surface-2) 70%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: ui-skeleton 1.15s ease-in-out infinite;
+}
+
+@keyframes ui-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

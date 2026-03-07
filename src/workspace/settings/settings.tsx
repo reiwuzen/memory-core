@@ -20,7 +20,16 @@ const Settings = () => {
          <div className="settings__container">
 
         <aside className="settings__sidebar">
-          <h2 className="settings__title">Settings</h2>
+          <div className="settings__sidebar-head">
+            <h2 className="settings__title">Settings</h2>
+            <button
+              className="settings__close"
+              onClick={() => settingsView.isOpen.actions.disable()}
+              aria-label="Close settings"
+            >
+              Close
+            </button>
+          </div>
 
           <nav>
             <button

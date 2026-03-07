@@ -2,15 +2,13 @@
   max-width: 700px;
   padding: 24px;
 
-  background: #0c121c;
+  background: var(--bg-secondary);
   border-radius: 14px;
 
-  border: 1px solid rgba(255,255,255,0.04);
-
-  position: relative;
+  border: 1px solid var(--border-color);
 
   font-family: "Inter", system-ui, sans-serif;
-  color: #e6edf3;
+  color: var(--text-primary);
 }
 
 /* TITLE */
@@ -23,33 +21,37 @@
 /* INFO ROWS */
 
 .structure_details p {
-  background: #1f2f46;
+  background: var(--card-bg);
   padding: 12px 14px;
   border-radius: 10px;
 
   margin-bottom: 10px;
 
   font-size: 14px;
+  color: var(--text-primary);
 }
 
 /* DELETE BUTTON */
 
-.onClick_removeTag_structure_details {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-
-  border: none;
-  background: #ff4d4f;
-  color: white;
-
-  padding: 6px 12px;
-  border-radius: 8px;
-
-  cursor: pointer;
-  transition: 0.2s;
+.structure_details_actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
 }
 
-.onClick_removeTag_structure_details:hover {
-  background: #ff7875;
+.structure_details_actions button {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.structure_details_actions .ghost {
+  background: var(--surface-2);
+}
+
+.onClick_removeTag_structure_details {
+  background: var(--intent-danger);
+  color: var(--accent-contrast);
 }

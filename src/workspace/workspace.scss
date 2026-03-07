@@ -1,8 +1,14 @@
 .workspace{
-    padding: 0px 180px;
-    height: calc(100% - 0px);
-    max-height: calc(100% - 0px);
-    width: calc(100% - 360px);
-    max-width: calc(100% - 360px);
-     background: #0f1115;
+    padding:
+      0
+      var(--page-safe-gap)
+      var(--page-safe-gap)
+      calc(var(--nav-toggle-left) + var(--nav-toggle-size) + var(--page-safe-gap));
+    height: 100%;
+    max-height: 100%;
+    width: 100%;
+    max-width: 100%;
+    background: var(--bg-primary);
+    overflow: hidden;
+    box-sizing: border-box;
 }

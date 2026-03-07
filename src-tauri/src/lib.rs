@@ -21,6 +21,7 @@ pub fn run() {
             storage::load_page_details,
             tag::create_tags_dir,
             tag::save_tag,
+            tag::update_tag,
             tag::load_all_tags,
             tag::delete_tag,
             settings::clear_data,

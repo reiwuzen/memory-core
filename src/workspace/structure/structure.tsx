@@ -6,58 +6,99 @@ import StructureDetails from "./structure_details/structure_details";
 import StructureCreate from "./structure_create/structure_create";
 import { useTags } from "@/hooks/useTag";
 import { useActiveTab } from "@/hooks/useActiveTab";
+import { appToast } from "@/components/ui";
 
 const Structure = () => {
   const [tag, setTag] = useState<Tag | null>(null);
-  const {activeTab, setActiveTabTypeAndView} = useActiveTab();
+  const [draftTag, setDraftTag] = useState<Tag | null>(null);
+  const { activeTab, setActiveTabTypeAndView } = useActiveTab();
+  const { reloadTags: reload, tagsActions } = useTags();
 
-  const {  reloadTags: reload,tagsActions } = useTags();
-  if(!activeTab) return
+  if (!activeTab) return null;
+
+  const goToList = async () => {
+    await reload();
+    setActiveTabTypeAndView("structure", "list");
+  };
+
   return (
     <div className="structure">
-      {activeTab.view === "list" && (
-        <StructureList
-          onSelectTag={(selectedTag) => {
-            setTag(selectedTag);
-            setActiveTabTypeAndView('structure',"details");
-          }}
-        />
-      )}
-      {activeTab.view === "details" && tag && <StructureDetails tag={tag} onDelete={async(tagToDelete)=>{
-        await tagsActions.remove(tagToDelete.id);
-        setTag(null);
-        await reload();
-        setActiveTabTypeAndView('structure',"list");
-      }} />}
+      <header className="structure__header">
+        <div>
+          <p className="structure__kicker">Knowledge Graph</p>
+          <h2>Structure</h2>
+        </div>
+        <div className="structure__actions">
+          <button
+            className="onClick_reload_structure"
+            onClick={async () => {
+              await goToList();
+              appToast.success("Structure reloaded");
+            }}
+          >
+            Refresh
+          </button>
+          <button
+            className="onClick_create_structure"
+            onClick={() => {
+              setDraftTag(null);
+              setActiveTabTypeAndView("structure", "add");
+            }}
+          >
+            New Tag
+          </button>
+        </div>
+      </header>
 
-      {activeTab.view === "add" && (
-        <StructureCreate
-          onCreate={async (createdTag) => {
-            await tagsActions.save(createdTag);
-            setTag(null)
-            await reload()
-            setActiveTabTypeAndView('structure',"list")
-            
-          }}
-        />
-      )}
-      <button className="onClick_create_structure" onClick={() => setActiveTabTypeAndView('structure','add')}>+</button>
-      <button className="onClick_reload_structure" onClick={async () => {await reload(); setActiveTabTypeAndView('structure','list')}}><svg xmlns="http://www.w3.org/2000/svg"
-     width="24"
-     height="24"
-     viewBox="0 0 24 24"
-     fill="none"
-     stroke="#070707"
-     stroke-width="2"
-     stroke-linecap="round"
-     stroke-linejoin="round">
+      <section className="structure__content">
+        {activeTab.view === "list" && (
+          <StructureList
+            onSelectTag={(selectedTag) => {
+              setTag(selectedTag);
+              setActiveTabTypeAndView("structure", "details");
+            }}
+          />
+        )}
 
-  <polyline points="23 4 23 10 17 10"></polyline>
-  <polyline points="1 20 1 14 7 14"></polyline>
-  <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"></path>
+        {activeTab.view === "details" && tag && (
+          <StructureDetails
+            tag={tag}
+            onBack={() => setActiveTabTypeAndView("structure", "list")}
+            onEdit={(tagToEdit) => {
+              setDraftTag(tagToEdit);
+              setActiveTabTypeAndView("structure", "add");
+            }}
+            onDelete={async (tagToDelete) => {
+              await tagsActions.remove(tagToDelete.id);
+              setTag(null);
+              await goToList();
+              appToast.success("Tag deleted");
+            }}
+          />
+        )}
 
-</svg>
-</button>
+        {activeTab.view === "add" && (
+          <StructureCreate
+            initialTag={draftTag}
+            onCancel={() => {
+              setDraftTag(null);
+              setActiveTabTypeAndView("structure", "list");
+            }}
+            onCreate={async (createdTag) => {
+              if (draftTag) {
+                await tagsActions.update(createdTag);
+                appToast.success("Tag updated");
+              } else {
+                await tagsActions.save(createdTag);
+                appToast.success("Tag created");
+              }
+              setTag(null);
+              setDraftTag(null);
+              await goToList();
+            }}
+          />
+        )}
+      </section>
     </div>
   );
 };

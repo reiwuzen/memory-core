@@ -1,19 +1,20 @@
 .structure_list{
-
-    .tag-input {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-  input {
+  input,
+  select {
     flex: 1;
-    padding: 6px 8px;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
   }
+}
 
-  button {
-    padding: 6px 12px;
-    cursor: pointer;
-  }
+.structure_list_controls {
+  display: grid;
+  grid-template-columns: 1fr 190px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 /* ================= TITLE ================= */
@@ -22,18 +23,19 @@
   font-size: 22px;
   font-weight: 600;
   margin-bottom: 18px;
+  color: var(--text-primary);
 }
 
 /* ================= LIST CONTAINER ================= */
 
 .tag-list {
-  max-width: 700px;
+  max-width: 900px;
 
-  background: #0c121c;
+  background: var(--bg-secondary);
   border-radius: 14px;
   padding: 20px;
 
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid var(--border-color);
 
   display: flex;
   flex-direction: column;
@@ -43,12 +45,13 @@
 /* ================= EMPTY STATE ================= */
 
 .hint {
-  background: #1f2f46;
+  background: var(--card-bg);
   padding: 16px;
   border-radius: 12px;
 
   font-size: 14px;
   opacity: 0.8;
+  color: var(--text-secondary);
 }
 
 /* ================= TAG ITEM ================= */
@@ -60,10 +63,10 @@
 
   padding: 14px 16px;
 
-  background: #1f2f46;
+  background: var(--card-bg);
   border-radius: 12px;
 
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid var(--border-color);
 
   cursor: pointer;
 
@@ -73,9 +76,9 @@
 }
 
 .tag-item:hover {
-  background: #243652;
+  background: var(--bg-secondary);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 6px 16px var(--shadow-color);
 }
 
 /* ================= PRIORITY COLOR BAR ================= */
@@ -104,6 +107,7 @@
 .label {
   font-weight: 500;
   font-size: 15px;
+  color: var(--text-primary);
 }
 
 /* ================= PRIORITY BADGE ================= */
@@ -111,9 +115,10 @@
 .priority {
   font-size: 12px;
   opacity: 0.7;
-  background: rgba(255,255,255,0.06);
+  background: var(--border-color);
   padding: 4px 8px;
   border-radius: 6px;
+  color: var(--text-primary);
 }
 
 /* ================= DELETE BUTTON ================= */
@@ -130,4 +135,10 @@
 
 .tag-item:hover .delete {
   opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .structure_list_controls {
+    grid-template-columns: 1fr;
+  }
 }
