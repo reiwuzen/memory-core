@@ -21,7 +21,13 @@ const Create = () => {
       )}
 
       {createSteps === 2 && selectedTemplate && (
-        <TemplateForm selectedTemplate={selectedTemplate} />
+        <TemplateForm
+          selectedTemplate={selectedTemplate}
+          onBack={() => {
+            setCreateSteps(1);
+            setSelectedTemplate(null);
+          }}
+        />
       )}
     </div>
   );

@@ -4,17 +4,20 @@ import type { PageTemplate } from "@/types/template";
 import { useActiveTab } from "@/hooks/useActiveTab";
 import { useLibrary } from "@/hooks/useLibrary";
 import type { PageType } from "@/types/page";
+import { appToast } from "@/components/ui";
 type TemplateFormProps = {
   selectedTemplate: PageTemplate;
+  onBack: () => void;
 };
 
 const memoryTypes: PageType[] = ["diary", "fact", "event", "generic"];
 
-const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
+const TemplateForm = ({ selectedTemplate, onBack }: TemplateFormProps) => {
   const { pageActions } = useLibrary();
   const { setActiveTabTypeAndView } = useActiveTab();
   const [title, setTitle] = useState(selectedTemplate.initialTitle);
   const [type, setType] = useState(selectedTemplate.pageType);
+  const isBookTemplate = selectedTemplate.id.startsWith("book-");
 
   const [open, setOpen] = useState<boolean>(false);
 
@@ -23,7 +26,9 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
       <header className="templateForm-header">
         <h1>Create memory</h1>
         <p>
-          This will create a new {selectedTemplate.pageType as string} page
+          {isBookTemplate
+            ? `This will create a ${selectedTemplate.pageType as string} book container`
+            : `This will create a new ${selectedTemplate.pageType as string} page`}
         </p>
       </header>
 
@@ -81,12 +86,31 @@ const TemplateForm = ({ selectedTemplate }: TemplateFormProps) => {
 
         <div className="form-actions">
           <button
+            className="ghost"
+            onClick={onBack}
+          >
+            Back
+          </button>
+          <button
             className="primary"
             disabled={!title.trim()}
             onClick={async () => {
               try {
-                await pageActions.page.create(title, type);
+                if (isBookTemplate) {
+                  const createBookRes = await pageActions.books.create(title.trim(), type);
+                  if (!createBookRes.ok) {
+                    throw new Error(String(createBookRes.error));
+                  }
+                  appToast.success(`Book created. ID: ${createBookRes.value.id}`);
+                } else {
+                  const createRes = await pageActions.page.create(title, type);
+                  if (!createRes.ok) {
+                    throw new Error(String(createRes.error));
+                  }
+                }
+
                 await pageActions.pages.load();
+                await pageActions.books.load();
                 setActiveTabTypeAndView("library", "list");
               } catch (err) {
                 console.error("Failed to save memory:", err);

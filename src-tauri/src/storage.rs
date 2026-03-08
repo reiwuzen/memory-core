@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::{
-    schema::{Book, PageMeta, VersionedPage, Snapshot, Tag}, 
+    schema::{Book, PageMeta, VersionedPage, Snapshot}, 
     utils::get_app_dir,
 };
 use tauri::{
@@ -1070,6 +1070,92 @@ pub fn delete_tag_from_page(
             tag_id, page_id
         ));
     }
+
+    let serialized = serde_json::to_string_pretty(&page_meta)
+        .map_err(|e| format!("Failed to serialize page metadata: {}", e))?;
+
+    fs::write(&page_json_tmp_path, serialized)
+        .map_err(|e| format!("Failed to write temp page metadata: {}", e))?;
+
+    fs::rename(&page_json_tmp_path, &page_json_path)
+        .map_err(|e| format!("Failed to atomically replace page metadata: {}", e))?;
+
+    Ok(page_meta)
+}
+
+#[command]
+pub fn book_store_dir(app: AppHandle) -> Result<PathBuf, String> {
+    let root = page_store_dir(app)?;
+    let books_dir = root.join("books");
+    std::fs::create_dir_all(&books_dir)
+        .map_err(|err| format!("Can not create book_store_dir: {}", err))?;
+    Ok(books_dir)
+}
+
+#[command]
+pub fn create_book(app: AppHandle, book: Book) -> Result<Book, String> {
+    use std::fs;
+
+    let books_dir = book_store_dir(app)?;
+    let path = books_dir.join(format!("{}.json", book.id));
+    if path.exists() {
+        return Err(format!("Book '{}' already exists", book.id));
+    }
+
+    let json = serde_json::to_string_pretty(&book)
+        .map_err(|e| format!("Failed to serialize book metadata: {}", e))?;
+    fs::write(path, json).map_err(|e| format!("Failed to write book metadata: {}", e))?;
+    Ok(book)
+}
+
+#[command]
+pub fn load_all_books(app: AppHandle) -> Result<Vec<Book>, String> {
+    let books_dir = book_store_dir(app)?;
+    let mut out = Vec::new();
+
+    let entries = std::fs::read_dir(&books_dir)
+        .map_err(|e| format!("Failed to read books dir: {}", e))?;
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let p = entry.path();
+        if !p.is_file() || p.extension().and_then(|s| s.to_str()) != Some("json") {
+            continue;
+        }
+        let raw = std::fs::read_to_string(&p)
+            .map_err(|e| format!("Failed to read {:?}: {}", p, e))?;
+        let book: Book = serde_json::from_str(&raw)
+            .map_err(|e| format!("Invalid book json in {:?}: {}", p, e))?;
+        out.push(book);
+    }
+
+    Ok(out)
+}
+
+#[command]
+pub fn set_book_id_on_page(
+    app: AppHandle,
+    page_id: String,
+    book_id: Option<String>,
+) -> Result<PageMeta, String> {
+    use std::fs;
+
+    let page_store_dir = page_store_dir(app)?;
+    let page_dir = page_store_dir.join(&page_id);
+
+    if !page_dir.is_dir() {
+        return Err(format!("Page '{}' does not exist", page_id));
+    }
+
+    let page_json_path = page_dir.join("page.json");
+    let page_json_tmp_path = page_dir.join("page.json.tmp");
+
+    let raw = fs::read_to_string(&page_json_path)
+        .map_err(|e| format!("Failed to read page metadata: {}", e))?;
+
+    let mut page_meta: PageMeta = serde_json::from_str(&raw)
+        .map_err(|e| format!("Failed to deserialize page metadata: {}", e))?;
+
+    page_meta.book_id = book_id;
 
     let serialized = serde_json::to_string_pretty(&page_meta)
         .map_err(|e| format!("Failed to serialize page metadata: {}", e))?;

@@ -149,6 +149,12 @@ export const PageService = () => {
   ) =>
     invokeSafe<PageMeta>("delete_tag_from_page", { pageId, tagId })
 
+  const setBookIdOnPage = (
+    pageId: string,
+    bookId: string | null
+  ) =>
+    invokeSafe<PageMeta>("set_book_id_on_page", { pageId, bookId })
+
   return {
     createPage,
     createPageWithInitialSnapshot,
@@ -157,6 +163,7 @@ export const PageService = () => {
     loadPages,
     reloadPage,
     upsertTagOnPage,
-    deleteTagFromPage
+    deleteTagFromPage,
+    setBookIdOnPage
   }
 }

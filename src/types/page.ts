@@ -9,8 +9,8 @@ export type PageMeta = {
     title: string
     readonly createdAt: string
     tags: string[]
-    bookId: string
-    parentPageId: string
+    bookId: string | null
+    parentPageId: string | null
     lastOpenedAt: string
     lastUpdatedAt: string
 }
