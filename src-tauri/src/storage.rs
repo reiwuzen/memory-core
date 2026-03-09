@@ -1085,7 +1085,7 @@ pub fn delete_tag_from_page(
 
 #[command]
 pub fn book_store_dir(app: AppHandle) -> Result<PathBuf, String> {
-    let root = page_store_dir(app)?;
+    let root = get_app_dir(&app)?;
     let books_dir = root.join("books");
     std::fs::create_dir_all(&books_dir)
         .map_err(|err| format!("Can not create book_store_dir: {}", err))?;
