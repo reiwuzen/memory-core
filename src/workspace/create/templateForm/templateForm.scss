@@ -133,6 +133,8 @@
 
 .form-actions {
   margin-top: 1rem;
+  display: flex;
+  gap: 0.6rem;
 
   button.primary {
   align-self: flex-start;
@@ -158,6 +160,23 @@
   &:disabled {
     opacity: 0.35;
     cursor: not-allowed;
+  }
+}
+
+  button.ghost {
+  align-self: flex-start;
+  padding: 0.7rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-color));
+    transform: translateY(-1px);
   }
 }
 

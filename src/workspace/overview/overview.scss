@@ -42,7 +42,7 @@
 
 .overview-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  grid-template-columns: repeat(4, minmax(80px, 1fr));
   gap: var(--space-2);
 }
 
@@ -70,7 +70,7 @@
 
 .overview-toolbar {
   display: grid;
-  grid-template-columns: 1fr minmax(180px, 230px);
+  grid-template-columns: 1fr minmax(180px, 230px) auto;
   gap: var(--space-3);
 }
 
@@ -85,6 +85,50 @@
     font-weight: 600;
     color: var(--text-primary);
   }
+}
+
+.overview-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.overview-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.overview-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+
+  h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+  }
+
+  span {
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 0.14rem 0.45rem;
+    color: var(--text-tertiary);
+    font-size: 0.72rem;
+  }
+}
+
+.overview-section-empty {
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
 }
 
 .overview-block-head {
@@ -132,8 +176,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: var(--space-3);
-  overflow: auto;
-  padding-right: 2px;
 }
 
 .card {
@@ -175,6 +217,96 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-2);
+}
+
+.card-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.book-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.unmerge-btn {
+  padding: 0.14rem 0.42rem !important;
+  font-size: 0.7rem !important;
+}
+
+.book-picker-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.book-picker-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  color: var(--text-primary);
+  padding: 0.65rem 0.72rem;
+  display: grid;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent-primary) 45%, var(--border-color));
+    background: color-mix(in srgb, var(--surface-1) 70%, var(--surface-2));
+  }
+
+  strong {
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+}
+
+.book-picker-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.book-picker-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+
+  span {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 0.12rem 0.42rem;
+  }
+}
+
+.book-picker-item-time {
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+}
+
+.select-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+
+  input {
+    width: 0.78rem;
+    height: 0.78rem;
+  }
 }
 
 .card-meta {
@@ -282,7 +414,7 @@
   }
 
   .overview-summary {
-    grid-template-columns: repeat(3, minmax(70px, 1fr));
+    grid-template-columns: repeat(2, minmax(70px, 1fr));
   }
 
   .overview-toolbar {

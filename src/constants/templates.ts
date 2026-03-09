@@ -3,18 +3,18 @@ import { PageTemplate } from "@/types/template";
 export const PAGES_TEMPLATES: PageTemplate[] = [
   {
     id: "generic",
-    label:"Generic",
-    description:"Create a custom",
+    label: "Generic",
+    description: "Create a custom",
     pageType: "generic",
-    initialTitle:"",
-    initialContent:""
+    initialTitle: "",
+    initialContent: ""
   },
   {
     id: "daily-diary",
     label: "Daily Diary",
     description: "Reflect on your day",
     pageType: "diary",
-    initialTitle: "Diary — ",
+    initialTitle: "Diary - ",
     initialContent: "<p>Today I felt...</p>",
   },
   {
@@ -22,7 +22,7 @@ export const PAGES_TEMPLATES: PageTemplate[] = [
     label: "Fact Note",
     description: "Store objective information",
     pageType: "fact",
-    initialTitle: "Fact — ",
+    initialTitle: "Fact - ",
     initialContent: "<p>Fact:</p>",
   },
   {
@@ -30,6 +30,6 @@ export const PAGES_TEMPLATES: PageTemplate[] = [
     label: "Event",
     description: "Record something that happened",
     pageType: "event",
-    initialTitle: "Event — ",
+    initialTitle: "Event - ",
   },
 ];

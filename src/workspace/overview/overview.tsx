@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import "./overview.scss";
 import { useLibrary } from "@/hooks/useLibrary";
 import { formatToLocaleDateTime } from "@/helper/formatToLocaleDateTime";
-import { rankPages } from "@/helper/rankPages";
+import { rankPages, type RankedPage } from "@/helper/rankPages";
 import { isNsfwPage } from "@/helper/isNsfwPage";
 import { useSettings } from "@/hooks/useSettings";
 import { Badge, EmptyState, Input, Modal, Skeleton } from "@/components/ui";
 import type { NormalizedVersionedPage } from "@/types/page";
+import type { Book } from "@/types/book";
 
 const STOP_WORDS = new Set([
   "the", "and", "for", "that", "with", "this", "from", "have", "you", "your",
@@ -111,22 +112,24 @@ const Overview = () => {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "updated" | "opened">("priority");
-  const [focusView, setFocusView] = useState<"priority" | "opened" | "updated">("priority");
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  const [openBookPicker, setOpenBookPicker] = useState<{ book: Book; members: RankedPage[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
 
     (async () => {
-      await pageActions.pages
-        .load()
-        .catch((err) => {
+      await Promise.all([
+        pageActions.pages.load().catch((err) => {
           if (!cancelled) setError(String(err));
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
+        }),
+        pageActions.books.load().catch((err) => {
+          if (!cancelled) setError(String(err));
+        }),
+      ]).finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     })();
 
     return () => {
@@ -135,60 +138,48 @@ const Overview = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filtered = useMemo(() => {
+  const rankedPages = useMemo(() => {
     const q = query.trim().toLowerCase();
     const ranked = rankPages(pagesStore.pages).filter(({ page }) => {
       if (!settingsData.nsfwContent && isNsfwPage(page)) return false;
       if (!q) return true;
-      return (
-        page.pageMeta.title.toLowerCase().includes(q) ||
-        page.pageMeta.tags.some((tag) => tag.toLowerCase().includes(q))
-      );
+      return page.pageMeta.title.toLowerCase().includes(q) || page.pageMeta.tags.some((tag) => tag.toLowerCase().includes(q));
     });
 
     ranked.sort((a, b) => {
-      if (sortBy === "updated") {
-        return b.page.pageMeta.lastUpdatedAt.localeCompare(a.page.pageMeta.lastUpdatedAt);
-      }
-      if (sortBy === "opened") {
-        return b.page.pageMeta.lastOpenedAt.localeCompare(a.page.pageMeta.lastOpenedAt);
-      }
+      if (sortBy === "updated") return b.page.pageMeta.lastUpdatedAt.localeCompare(a.page.pageMeta.lastUpdatedAt);
+      if (sortBy === "opened") return b.page.pageMeta.lastOpenedAt.localeCompare(a.page.pageMeta.lastOpenedAt);
       return b.score - a.score;
     });
 
     return ranked;
   }, [pagesStore.pages, query, settingsData.nsfwContent, sortBy]);
 
-  const recentOpened = useMemo(() => {
-    return [...filtered]
-      .sort((a, b) => b.page.pageMeta.lastOpenedAt.localeCompare(a.page.pageMeta.lastOpenedAt))
-      .slice(0, 8);
-  }, [filtered]);
+  const booksFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const next = [...pagesStore.books];
+    if (q) {
+      return next.filter((b) => b.title.toLowerCase().includes(q) || b.id.toLowerCase().includes(q));
+    }
+    return next;
+  }, [pagesStore.books, query]);
 
-  const recentUpdated = useMemo(() => {
-    return [...filtered]
-      .sort((a, b) => b.page.pageMeta.lastUpdatedAt.localeCompare(a.page.pageMeta.lastUpdatedAt))
-      .slice(0, 8);
-  }, [filtered]);
+  const pagesByBookId = useMemo(() => {
+    return rankedPages.reduce<Record<string, RankedPage[]>>((acc, p) => {
+      const bookId = p.page.pageMeta.bookId;
+      if (!bookId) return acc;
+      acc[bookId] = [...(acc[bookId] ?? []), p];
+      return acc;
+    }, {});
+  }, [rankedPages]);
+
+  const unassignedPages = useMemo(() => rankedPages.filter((p) => !p.page.pageMeta.bookId), [rankedPages]);
 
   const averageScore = useMemo(() => {
-    if (filtered.length === 0) return 0;
-    const total = filtered.reduce((sum, item) => sum + item.score, 0);
-    return Math.round(total / filtered.length);
-  }, [filtered]);
-
-  const focusList = useMemo(() => {
-    if (focusView === "opened") return recentOpened;
-    if (focusView === "updated") return recentUpdated;
-    return filtered.slice(0, 12);
-  }, [filtered, focusView, recentOpened, recentUpdated]);
-
-  const focusTitle =
-    focusView === "opened"
-      ? "Recently Opened"
-      : focusView === "updated"
-        ? "Recently Updated"
-        : "Priority Highlights";
+    if (rankedPages.length === 0) return 0;
+    const total = rankedPages.reduce((sum, item) => sum + item.score, 0);
+    return Math.round(total / rankedPages.length);
+  }, [rankedPages]);
 
   const selectedPage = useMemo(
     () => (selectedPageId ? pagesStore.pages.find((item) => item.pageMeta.id === selectedPageId) ?? null : null),
@@ -210,7 +201,7 @@ const Overview = () => {
         <div>
           <p className="overview-kicker">Memory Dashboard</p>
           <h1>Overview</h1>
-          <p className="overview-subtitle">Select any memory card to view an instant content summary.</p>
+          <p className="overview-subtitle">Books are containers. Pages are rendered by page.bookId mapping.</p>
         </div>
         <div className="overview-summary">
           <div className="summary-card">
@@ -218,8 +209,12 @@ const Overview = () => {
             <strong>{pagesStore.pages.length}</strong>
           </div>
           <div className="summary-card">
+            <span>Books</span>
+            <strong>{pagesStore.books.length}</strong>
+          </div>
+          <div className="summary-card">
             <span>Visible</span>
-            <strong>{filtered.length}</strong>
+            <strong>{rankedPages.length}</strong>
           </div>
           <div className="summary-card">
             <span>Avg Score</span>
@@ -248,85 +243,117 @@ const Overview = () => {
         </select>
       </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          title="No memories found"
-          description="Create your first page or adjust the search query."
-        />
+      {rankedPages.length === 0 && booksFiltered.length === 0 ? (
+        <EmptyState title="No memories found" description="Create your first page or adjust the search query." />
       ) : (
         <div className="overview-block">
-          <div className="overview-block-head">
-            <h2>{focusTitle}</h2>
-            <div className="overview-filters" role="tablist" aria-label="Overview sections">
-              <button
-                className={focusView === "priority" ? "active" : ""}
-                onClick={() => setFocusView("priority")}
-                role="tab"
-                aria-selected={focusView === "priority"}
-              >
-                Priority
-              </button>
-              <button
-                className={focusView === "opened" ? "active" : ""}
-                onClick={() => setFocusView("opened")}
-                role="tab"
-                aria-selected={focusView === "opened"}
-              >
-                Opened
-              </button>
-              <button
-                className={focusView === "updated" ? "active" : ""}
-                onClick={() => setFocusView("updated")}
-                role="tab"
-                aria-selected={focusView === "updated"}
-              >
-                Updated
-              </button>
-            </div>
-          </div>
+          <div className="overview-sections">
+            <section className="overview-section">
+              <div className="overview-section-head">
+                <h3>Books</h3>
+                <span>{booksFiltered.length}</span>
+              </div>
+              <div className="overview-scroll">
+                {booksFiltered.map((book) => {
+                  const members = pagesByBookId[book.id] ?? [];
+                  const score = members.length > 0
+                    ? Math.round(members.reduce((sum, m) => sum + m.score, 0) / members.length)
+                    : 0;
+                  return (
+                    <article
+                      key={book.id}
+                      className="card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setOpenBookPicker({ book, members })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setOpenBookPicker({ book, members });
+                        }
+                      }}
+                    >
+                      <div className="card-head">
+                        <h3>{book.title}</h3>
+                        <Badge>Score {score}</Badge>
+                      </div>
+                      <div className="card-meta">
+                        <span>{book.type}</span>
+                        <span>{members.length} pages</span>
+                      </div>
+                      <p>Book ID {book.id}</p>
+                    </article>
+                  );
+                })}
+                {booksFiltered.length === 0 && <div className="overview-section-empty">No books found</div>}
+              </div>
+            </section>
 
-          <div className="overview-scroll">
-            {focusList.map(({ page, score, reasons }) => (
-              <button
-                key={page.pageMeta.id}
-                className="card"
-                onClick={() => setSelectedPageId(page.pageMeta.id)}
-              >
-                <div className="card-head">
-                  <h3>{page.pageMeta.title}</h3>
-                  <Badge
-                    title={reasons.map((reason) => `- ${reason}`).join("\n")}
-                    aria-label={`Priority score ${score}`}
-                  >
-                    Score {score}
-                  </Badge>
-                </div>
-                <div className="card-meta">
-                  <span>{page.pageMeta.type}</span>
-                  <span>{page.pageMeta.tags.length} tags</span>
-                </div>
-                <p>
-                  Opened {formatToLocaleDateTime(page.pageMeta.lastOpenedAt || page.pageMeta.createdAt)}
-                </p>
-                <p>
-                  Updated {formatToLocaleDateTime(page.pageMeta.lastUpdatedAt || page.pageMeta.createdAt)}
-                </p>
-              </button>
-            ))}
+            <section className="overview-section">
+              <div className="overview-section-head">
+                <h3>Pages</h3>
+                <span>{unassignedPages.length}</span>
+              </div>
+              <div className="overview-scroll">
+                {unassignedPages.map(({ page, score, reasons }) => (
+                  <button key={page.pageMeta.id} className="card" onClick={() => setSelectedPageId(page.pageMeta.id)}>
+                    <div className="card-head">
+                      <h3>{page.pageMeta.title}</h3>
+                      <Badge title={reasons.map((reason) => `- ${reason}`).join("\n")} aria-label={`Priority score ${score}`}>
+                        Score {score}
+                      </Badge>
+                    </div>
+                    <div className="card-meta">
+                      <span>{page.pageMeta.type}</span>
+                      <span>{page.pageMeta.tags.length} tags</span>
+                    </div>
+                    <p>Opened {formatToLocaleDateTime(page.pageMeta.lastOpenedAt || page.pageMeta.createdAt)}</p>
+                    <p>Updated {formatToLocaleDateTime(page.pageMeta.lastUpdatedAt || page.pageMeta.createdAt)}</p>
+                  </button>
+                ))}
+                {unassignedPages.length === 0 && <div className="overview-section-empty">No unassigned pages found</div>}
+              </div>
+            </section>
           </div>
         </div>
       )}
 
       <Modal
-        title={selectedPage?.pageMeta.title ?? "Summary"}
-        isOpen={!!selectedPage}
-        onClose={() => setSelectedPageId(null)}
+        title={openBookPicker ? `Open Book ${openBookPicker.book.title}` : "Open Book"}
+        isOpen={!!openBookPicker}
+        onClose={() => setOpenBookPicker(null)}
       >
+        <div className="book-picker-list">
+          {openBookPicker && openBookPicker.members.length === 0 && (
+            <div className="overview-section-empty">This book has no pages yet.</div>
+          )}
+          {openBookPicker?.members.map((member) => (
+            <button
+              key={member.page.pageMeta.id}
+              className="book-picker-item"
+              onClick={() => {
+                setSelectedPageId(member.page.pageMeta.id);
+                setOpenBookPicker(null);
+              }}
+            >
+              <div className="book-picker-item-head">
+                <strong>{member.page.pageMeta.title}</strong>
+                <Badge className="type-chip">{member.page.pageMeta.type}</Badge>
+              </div>
+              <div className="book-picker-item-meta">
+                <span>Score {member.score}</span>
+                <span>{member.page.normalizedSnapshots.ids.length} snapshots</span>
+                <span>{member.page.pageMeta.tags.length} tags</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      <Modal title={selectedPage?.pageMeta.title ?? "Summary"} isOpen={!!selectedPage} onClose={() => setSelectedPageId(null)}>
         {selectedPage && !settingsData.aiAnalysis ? (
           <div className="overview-summary-modal">
-            <p className="overview-summary-empty">
-              AI analysis is off. Enable it in Settings &gt; Privacy &amp; Storage to generate summaries.
-            </p>
+            <p className="overview-summary-empty">AI analysis is off. Enable it in Settings &gt; Privacy &amp; Storage to generate summaries.</p>
           </div>
         ) : null}
         {selectedPage && selectedSummary ? (

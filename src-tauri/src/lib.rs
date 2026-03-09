@@ -11,12 +11,16 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             storage::page_store_dir,
+            storage::book_store_dir,
+            storage::create_book,
+            storage::load_all_books,
             storage::create_page,
             storage::create_page_with_initial_snapshot,
             storage::create_new_snapshot_of_page,
             storage::delete_page,
             storage::upsert_tag_on_page,
             storage::delete_tag_from_page,
+            storage::set_book_id_on_page,
             storage::load_all_pages,
             storage::load_page_details,
             tag::create_tags_dir,
