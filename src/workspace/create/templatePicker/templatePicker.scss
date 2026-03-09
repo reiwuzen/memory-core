@@ -45,6 +45,28 @@
   }
 }
 
+.templatePicker-actions {
+  display: flex;
+  gap: 0.6rem;
+
+  .ghost {
+    align-self: flex-start;
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--accent-primary) 40%, var(--border-color));
+      transform: translateY(-1px);
+    }
+  }
+}
+
 .template-card {
   all: unset;
   cursor: pointer;
