@@ -61,7 +61,8 @@ export const PageService = () => {
 
   const createPageWithInitialSnapshot = async (
     title: string,
-    type: PageType
+    type: PageType,
+    contentJson?: string
   ): Promise<Result<VersionedPage, unknown>> => {
 
     const pageId = v7()
@@ -86,7 +87,7 @@ export const PageService = () => {
       pageId,
       parentSnapshotId: null,
       createdAt: time,
-      contentJson: JSON.stringify([
+      contentJson: contentJson ?? JSON.stringify([
         createBlock("paragraph").match(
           b => b,
           () => DEFAULT_PARAGRAPH_BLOCK
