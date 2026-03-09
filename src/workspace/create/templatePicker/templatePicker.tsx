@@ -1,84 +1,76 @@
 import "./templatePicker.scss";
-import type { PageTemplate } from "@/types/template";
-import { PAGES_TEMPLATES } from "@/constants/templates";
+import { useMemo, useState } from "react";
+import type { CreateTemplate } from "@/types/template";
+import { CREATE_TEMPLATES } from "@/constants/templates";
 
 type TemplatePickerProps = {
-  onSelectTemplate: (template: PageTemplate) => void;
+  onSelectTemplate: (template: CreateTemplate) => void;
 };
 
 const TemplatePicker = ({ onSelectTemplate }: TemplatePickerProps) => {
-  const bookTemplates: PageTemplate[] = [
-    {
-      id: "book-generic",
-      label: "Generic",
-      description: "Create generic pages inside a book",
-      pageType: "generic",
-      initialTitle: "Book - Generic",
-    },
-    {
-      id: "book-diary",
-      label: "Diary",
-      description: "Create diary pages inside a book",
-      pageType: "diary",
-      initialTitle: "Book - Diary",
-    },
-    {
-      id: "book-fact",
-      label: "Facts",
-      description: "Create fact pages inside a book",
-      pageType: "fact",
-      initialTitle: "Book - Fact",
-    },
-    {
-      id: "book-event",
-      label: "Event",
-      description: "Create event pages inside a book",
-      pageType: "event",
-      initialTitle: "Book - Event",
-    },
-  ];
+  const [createType, setCreateType] = useState<"page" | "book" | null>(null);
+
+  const filteredTemplates = useMemo(
+    () => CREATE_TEMPLATES.filter((template) => template.createType === createType),
+    [createType],
+  );
 
   return (
     <div className="templatePicker">
       <header className="templatePicker-header">
-        <h1>Create a Page</h1>
+        <h1>Create Memory</h1>
         <p>
-          Choose how you want to begin. Select a template to initialize a new
-          data structure in the current branch.
+          Start by selecting memory kind, then choose a template type.
         </p>
       </header>
 
-      <div className="templatePicker-section">
-        <h2>Pages</h2>
+      {!createType && (
         <div className="templatePicker-wrapper">
-          {PAGES_TEMPLATES.map((template) => (
-            <button
-              key={template.id}
-              className="template-card"
-              onClick={() => onSelectTemplate(template)}
-            >
-              <h3>{template.label}</h3>
-              <p>{template.description}</p>
-            </button>
-          ))}
+          <button
+            className="template-card"
+            onClick={() => setCreateType("page")}
+          >
+            <h3>Page</h3>
+            <p>Create a standalone page from a template.</p>
+          </button>
+          <button
+            className="template-card"
+            onClick={() => setCreateType("book")}
+          >
+            <h3>Book</h3>
+            <p>Create a book and optionally attach existing pages.</p>
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="templatePicker-section">
-        <h2>Book</h2>
-        <div className="templatePicker-wrapper">
-          {bookTemplates.map((template) => (
+      {createType && (
+        <>
+          <div className="templatePicker-actions">
             <button
-              key={template.id}
-              className="template-card"
-              onClick={() => onSelectTemplate(template)}
+              className="ghost"
+              onClick={() => setCreateType(null)}
             >
-              <h3>{template.label}</h3>
-              <p>{template.description}</p>
+              Back
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          <div className="templatePicker-section">
+            <h2>{createType === "book" ? "Book Templates" : "Page Templates"}</h2>
+            <div className="templatePicker-wrapper">
+              {filteredTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  className="template-card"
+                  onClick={() => onSelectTemplate(template)}
+                >
+                  <h3>{template.label}</h3>
+                  <p>{template.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
