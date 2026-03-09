@@ -5,12 +5,12 @@
 
 import type { PageType } from "./page";
 
-export type PageTemplate = {
+export type CreateTemplate = {
   id: string;
   label: string;
   description: string;
-  pageType: PageType;
+  templateType: PageType;
+  createType: "page" | "book";
   initialTitle: string;
   initialContent?: string;
 };
-
