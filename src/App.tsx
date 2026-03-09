@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import "./App.scss";
+import "./styles/themes.css";
+import "./components/ui/ui.scss";
 import Navbar from "./components/navbar/navbar";
 import Workspace from "./workspace/workspace";
 import { useEffect } from "react";
