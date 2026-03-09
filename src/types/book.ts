@@ -6,3 +6,4 @@ export type Book = {
     createdAt: string
     type: PageType
 }
+export type BookType = PageType;
