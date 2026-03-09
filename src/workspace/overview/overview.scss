@@ -172,6 +172,7 @@
 }
 
 .overview-scroll {
+  padding-top: 2px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: var(--space-3);

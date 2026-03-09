@@ -26,11 +26,11 @@ const MemorySettings = () => {
         </label>
 
         <label className="setting">
-          <span>Auto-create node on entry</span>
+          <span>Auto-create snapshot on entry</span>
           <input
             type="checkbox"
-            checked={settingsData.autoCreateNode}
-            onChange={settingsAction.autoCreateNode.toggle}
+            checked={settingsData.autoCreateSnapshot}
+            onChange={settingsAction.autoCreateSnapshot.toggle}
           />
         </label>
       </div>

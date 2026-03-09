@@ -21,7 +21,7 @@ export const useSettings = () => {
     performanceMode,
     reduceAnimations,
     hardwareAcceleration,
-    autoCreateNode,
+    autoCreateSnapshot,
     autoLinkRelated,
     autoGenerateTags,
     versionTrackingLevel,
@@ -46,7 +46,7 @@ export const useSettings = () => {
     setPerformanceMode,
     setReduceAnimations,
     setHardwareAcceleration,
-    setAutoCreateNode,
+    setAutoCreateSnapshot,
     setAutoLinkRelated,
     setAutoGenerateTags,
     setVersionTrackingLevel,
@@ -71,7 +71,7 @@ export const useSettings = () => {
     performanceMode,
     reduceAnimations,
     hardwareAcceleration,
-    autoCreateNode,
+    autoCreateSnapshot,
     autoLinkRelated,
     autoGenerateTags,
     versionTrackingLevel,
@@ -204,10 +204,10 @@ export const useSettings = () => {
       toggle: () => setHardwareAcceleration(!hardwareAcceleration),
     },
 
-    autoCreateNode: {
-      enable: () => setAutoCreateNode(true),
-      disable: () => setAutoCreateNode(false),
-      toggle: () => setAutoCreateNode(!autoCreateNode),
+    autoCreateSnapshot: {
+      enable: () => setAutoCreateSnapshot(true),
+      disable: () => setAutoCreateSnapshot(false),
+      toggle: () => setAutoCreateSnapshot(!autoCreateSnapshot),
     },
 
     autoLinkRelated: {
