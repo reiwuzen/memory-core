@@ -53,8 +53,8 @@ export type StoreState = {
     hardwareAcceleration: boolean,
     setHardwareAcceleration: (b: boolean) => void
 
-    autoCreateNode: boolean,
-    setAutoCreateNode: (b: boolean) => void
+    autoCreateSnapshot: boolean,
+    setAutoCreateSnapshot: (b: boolean) => void
 
     autoLinkRelated: boolean,
     setAutoLinkRelated: (b: boolean) => void

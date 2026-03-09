@@ -71,9 +71,9 @@ setView:(s)=> set({
     setHardwareAcceleration: (b) => set({
         hardwareAcceleration: b,
     }),
-    autoCreateNode: DS.autoCreateNode,
-    setAutoCreateNode: (b) => set({
-        autoCreateNode: b,
+    autoCreateSnapshot: DS.autoCreateSnapshot,
+    setAutoCreateSnapshot: (b) => set({
+        autoCreateSnapshot: b,
     }),
     autoLinkRelated: DS.autoLinkRelated,
     setAutoLinkRelated: (b) => set({
@@ -122,7 +122,7 @@ setView:(s)=> set({
         performanceMode: DS.performanceMode,
         reduceAnimations: DS.reduceAnimations,
         hardwareAcceleration: DS.hardwareAcceleration,
-        autoCreateNode: DS.autoCreateNode,
+        autoCreateSnapshot: DS.autoCreateSnapshot,
         autoLinkRelated: DS.autoLinkRelated,
         autoGenerateTags: DS.autoGenerateTags,
         versionTrackingLevel: DS.versionTrackingLevel,
@@ -149,7 +149,7 @@ setView:(s)=> set({
         performanceMode: state.performanceMode,
         reduceAnimations: state.reduceAnimations,
         hardwareAcceleration: state.hardwareAcceleration,
-        autoCreateNode: state.autoCreateNode,
+        autoCreateSnapshot: state.autoCreateSnapshot,
         autoLinkRelated: state.autoLinkRelated,
         autoGenerateTags: state.autoGenerateTags,
         versionTrackingLevel: state.versionTrackingLevel,
