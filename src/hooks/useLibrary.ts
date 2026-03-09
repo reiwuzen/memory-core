@@ -14,6 +14,7 @@ export const useLibrary = () => {
   const setActivePage = useLibraryStore((s) => s.setActivePage);
   const {
     createPage,
+    createPageWithInitialSnapshot,
     createNewSnapshotOfPage,
     deletePage,
     loadPages,
@@ -50,6 +51,7 @@ export const useLibrary = () => {
 
     page: {
       create: createPage,
+      createWithInitialSnapshot: createPageWithInitialSnapshot,
       createNewSnapshot: createNewSnapshotOfPage,
       delete: deletePage,
       addTag: (pageId: string, tagId: string) => {
