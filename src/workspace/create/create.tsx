@@ -2,12 +2,11 @@ import "./create.scss";
 import { useState } from "react";
 import TemplatePicker from "./templatePicker/templatePicker";
 import TemplateForm from "./templateForm/templateForm";
-import type { PageTemplate } from "@/types/template";
+import type { CreateTemplate } from "@/types/template";
 
 const Create = () => {
   const [createSteps, setCreateSteps] = useState<1 | 2>(1);
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<PageTemplate>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<CreateTemplate | null>(null);
 
   return (
     <div className="create">
