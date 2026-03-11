@@ -71,7 +71,7 @@ pnpm tauri build # Desktop binary build
 
 ## Current Status
 
-- Version: `0.6.0`
+- Version: `0.9.0`
 - Pre-1.0 and actively evolving
 - Breaking changes can occur before stable `1.0.0`
 
