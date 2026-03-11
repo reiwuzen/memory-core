@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS : DefaultSettings= {
     performanceMode: false,
     reduceAnimations: false,
     hardwareAcceleration: true,
-    autoCreateNode: true,
+    autoCreateSnapshot: true,
     autoLinkRelated: true,
     autoGenerateTags: false,
     versionTrackingLevel: "standard",
